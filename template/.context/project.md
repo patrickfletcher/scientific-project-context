@@ -1,0 +1,56 @@
+# Project Context
+
+Purpose: compact, current context for safe work by human and agent contributors.
+Read when: starting work, checking project intent or current reality, or deciding whether more documentation is justified.
+Update when: project purpose, executable state, current focus, scientific constraints, or sharing intent changes.
+
+Keep this file brief. This is not a form that must be completed: delete prompts that do not apply, and use explicit unknowns instead of invented facts. A person or agent may draft it from available evidence; the scientist or relevant domain authority reviews scientific meaning, while the project or data owner reviews project intent and permissions. Add a focused source only when recurring detail persists, updates independently, and materially harms this file's scanability.
+
+This file owns scientific purpose, current state, evidence, risks, and open decisions. `AGENTS.md` owns environment, commands, and conventions; `README.md` owns human setup and command documentation. Link to them rather than repeating them here.
+
+`.context/scientific-practice.md` is the stable scientific contract. This file records how that contract applies to the current project.
+
+## Purpose and Useful Outcome
+
+**What this project does**: [one or two sentences]
+
+**Who uses the result and what useful outcome they need**: [who, and what they need out of it]
+
+## Current Reality
+
+**Main materials and entry points**: [the data, notebooks, scripts, protocols, instrument configurations, models, or outputs someone needs to find the work; not how to run it]
+
+**How a result or behavior is checked**: [control, reference measurement, expected property, test, or explicit absence of any check]
+
+**Operating conditions that affect the science**: [instrument or acquisition state, biological or physical conditions, access limits, or explicit unknown; routine software setup belongs in `README.md`]
+
+## Current Work
+
+**Current focus**: [what is being worked on now]
+
+**Next meaningful step**: [the smallest useful next step]
+
+## Scientific Work, Evidence, and Outputs
+
+**What must not be changed silently**: [protected data, models, calibration, curated decisions, reference cases, or `none identified yet`]
+
+**What could make the result wrong even if the workflow completes or looks plausible**: [the main failure modes]
+
+**Smallest useful check**: [a check or observation you could actually perform, plus the expected value, tolerance, uncertainty, property, comparison, control, or failure signal; say why it is premature if no scientific question or behavior is chosen yet]
+
+**Current evidence and limits**: [observed result, input and procedure identity, relevant uncertainty, review state, supported domain, and material limits, or `no evidence yet`; say which level these results sit at]
+
+**What later work relies on**: [the settled choices later work now assumes — units, conventions, exclusions, parameter ranges, calibration, initial or boundary conditions, randomization — or `nothing yet`. Name only what a change would now break; anything not named here can still change freely]
+
+That last line decides how much evidence a change here owes. While it names
+nothing, work stays exploratory and owes only a note that it is provisional. Add
+an entry at the moment you decide to rely on something, and say so; no tool can
+make that call for you.
+
+## Unresolved Questions
+
+[only questions that must persist across sessions; ask blocking questions directly instead of parking them here]
+
+## Sharing and Reuse
+
+[current paper-companion, archive, internal handoff, library, or service intent when known; `not relevant yet` is fine]

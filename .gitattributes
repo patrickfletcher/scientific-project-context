@@ -1,0 +1,5 @@
+# Shipped Markdown is compared byte for byte, so its line endings must not vary
+# with the checkout platform.
+*.md text eol=lf
+*.py text eol=lf
+*.toml text eol=lf
