@@ -39,7 +39,7 @@ Supporting project context makes those specifications usable: current reality, c
 7. **Connect results and claims to evidence.** Make the relevant chain from source inputs and transformations through settings, notebook/code/protocol and method identity, expected signal, observed result and uncertainty, limits, and staleness reconstructable.
 8. **Prepare for sharing without front-loading release work.** Confirmed internal context may become the basis for public documentation when a paper, archive, release, or handoff becomes real.
 9. **Measure outcomes, not document counts.** Reading burden, avoided errors, useful checks, and successful handoffs matter; file creation alone does not.
-10. **Write for the reader, not the repository.** Every file the product ships or generates should read as ordinary scientific and engineering English. Do not introduce private vocabulary into a project that has its own. Real use showed this product's register leaking into a scientific repository until the user banned it by hand.
+10. **Write for the reader, not the repository.** Every file the product ships or generates should read as ordinary scientific and engineering English. Do not introduce private vocabulary into a project that has its own. Real use showed this product's register leaking into a scientific repository until the user banned it by hand, and a second trial showed the practice core and skills carrying it in themselves; a starter test now keeps promotion and source-ownership terms out of shipped text.
 
 ## Surface Ownership
 
@@ -82,8 +82,8 @@ AGENTS.md
 ```
 
 - `AGENTS.md` carries project authority and collaboration conventions, a compact versioned route to current context and its maintenance workflows, the project essentials an agent needs before acting (environment activation, test and tool invocation, protected inputs in one line, repository coding conventions or a route to an existing convention source, and where `spctx` is installed), and where each kind of fact lives. It is the scarce budget: everything an on-demand skill can own has been moved out of it.
-- `.context/scientific-practice.md` carries the stable, relevance-gated scientific contract: researcher/agent authority, what will depend on the result and the evidence each level owes, protected material and permitted use, questions and methods, provenance and uncertainty, discriminating checks, evidence and staleness, and claim boundaries.
-- `.context/project.md` is the compact project-specific application: purpose, materials and entry points, current work, protected material, main scientific risk, useful check, evidence and limits, what later work relies on, unresolved questions, and sharing intent. The relied-on list is the one that carries the intended-use levels in practice: the default is exploratory, only the exceptions are named, and a change that touches nothing on the list needs no ceremony.
+- `.context/scientific-practice.md` carries the stable, relevance-gated scientific contract: who decides meaning and who decides permission, what will depend on the result and the evidence each level owes, protected material and permitted use, questions and methods, provenance and uncertainty, discriminating checks, evidence and staleness, and claim boundaries.
+- `.context/project.md` is the compact project-specific application: purpose, materials and entry points, current work, protected material, main scientific risk, useful check, current findings and limits, what later work relies on, unresolved questions, and sharing intent. The relied-on list is the one that carries the intended-use levels in practice: the default is exploratory, only the exceptions are named, and a change that touches nothing on the list needs no ceremony.
 - `spctx-project-context` activates, initializes, refreshes, separates, and retires context, records the project's own field conventions in the practice contract outside the managed core, and tunes the skill trigger descriptions to the project's own vocabulary.
 - `spctx-scientific-change` connects a material change to its main risk, smallest useful check, evidence, and stale dependents, and stops after stating the risk when nothing depends on the result yet.
 - `spctx-public-writing` turns confirmed facts into text for a named reader outside the work, matching claim strength to the level the work has reached and keeping public text true to the implementation. It applies the levels the contract defines rather than defining its own, and hands a claim that would be promoted by drafting back to `spctx-scientific-change`.
@@ -112,6 +112,8 @@ The prescribed layout stops at the six starter files plus that optional router. 
 Files on disk are not adoption. Reliable self-maintenance requires the compact route in an instruction surface that the agents in use actually discover. New projects receive the complete route in the packaged `AGENTS.md`. For retrofits, initialization must preserve existing instructions, identify the actual discovery surface with an agent or user, and ask the project authority to approve the smallest compatible route after conflict review; full-file replacement is neither required nor allowed by the CLI. Project context and the canonical skills remain the single authority. If no durable route is approved, the honest state is `manual_activation_required`.
 
 Maintenance is event-driven. Ordinary work updates only the durable facts, evidence state, current focus, and routes that changed. A focused source is added only after sustained pressure and is retired after its still-current content has moved to an authoritative home. Git history is the default home for superseded planning and narrative; protected, discrepant, negative, stale, or claim-bearing evidence follows its scientific or governance retention rules instead of being discarded by age.
+
+Context records current state, rewritten in place. A record that gains an entry per run is a log: run detail belongs beside the outputs, written by the code that produced them, and narrative belongs in Git. Permission given in conversation, and statements of what stayed unchanged or did not happen, belong in neither. Real use (T2) showed an always-read rule to update whenever evidence status changed, together with safeguards phrased as standing obligations, turning a project's context into a defensive run log within days, twice, after cleanups that left those rules in place. The always-read route, the starter, and the practice core therefore ask for current state, and the core's every-level safeguards are met by acting rather than by stating them. No findings, decision, or run-record document type ships: the rule carries the lesson without a taxonomy.
 
 Successful initialization presents the same bounded command inventory through two entry points: the human/machine operation report and installed `AGENTS.md`. Discovery does not imply use. The public CLI consists of `init`, read-only `check`, and preview-first `sync-index`.
 
@@ -332,7 +334,8 @@ Offer in this order, because value and conflict risk differ sharply by section:
    reachable only from the environment this section names.
 2. `Where Facts Live`, this product's central claim and the section an existing
    file is least likely to already state.
-3. `Authority`, only where the existing file states no precedence of its own.
+3. `When Guidance Conflicts`, only where the existing file states no precedence
+   of its own.
 4. `Working Style`, offered last and dropped readily. A maintained repository
    usually has its own, and this is where a merge tramples most easily.
 

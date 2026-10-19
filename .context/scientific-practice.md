@@ -19,32 +19,32 @@ question, decision, or intended use
 -> supported conclusion and limits
 ```
 
-These parts may stay compact and may live in existing project sources. People and agents may inspect evidence, draft context, perform checks, and record results. An identified scientist or relevant domain authority confirms consequential scientific meaning and claim scope. The project, data, or community authority confirms permission to change, use, or share material. One role does not silently imply the other.
+These parts may stay compact and may live in existing project sources. People and agents may inspect evidence, draft context, perform checks, and record results. The responsible scientist, or a relevant domain expert, confirms what a result means and how far a claim may go. The project, data, or community owner confirms permission to change, use, or share material. Neither role implies the other.
 
 <!-- BEGIN SPCTX SCIENTIFIC PRACTICE CORE v1 -->
-## Authority and Meaning
+## Who Decides
 
-- An identified scientist or relevant domain authority owns scientific meaning, acceptable scientific behavior, and claim scope. A project, data, or community owner controls operational changes and permitted use or sharing. Project ownership or a task request alone does not establish scientific expertise or authority over an accepted scientific reference.
-- Inspect available evidence before asking, but do not invent a role, permission, or scientific answer when the project cannot establish it.
+- The scientist responsible for the work, or a relevant domain expert, decides what results mean, what scientific behavior is acceptable, and how far a claim may go. Whoever owns the project, the data, or a community's material decides what may be changed, used, or shared. Owning a project or asking for a task does not by itself make someone the scientific expert, or entitle them to overrule an accepted scientific reference.
+- Inspect available evidence before asking, but do not invent a role, permission, or scientific answer the project cannot establish.
 - Distinguish observations, derived results, proposed interpretations, and unknowns. A plausible agent-generated explanation is not evidence.
-- If another instruction materially conflicts with these safeguards, stop and ask the user or domain authority to resolve the conflict. File presence alone does not establish scientific authority.
+- When another instruction conflicts with these safeguards, do not choose between them; ask the user or the scientist responsible to settle it. A file's presence does not settle who decides.
 
 ## What Will Depend on the Result
 
-- Before deciding how much evidence a piece of work owes, say what will depend on its result. Each level below inherits the one before it.
-  - **Exploratory**: nothing depends on it yet. Say what was done and that it is provisional. No check, evidence record, or staleness obligation is owed. If you expect to promote it later, naming what you chose and what you set aside costs one line now and is hard to recover afterward.
+- Before deciding how much evidence a piece of work owes, say what will depend on its result. Each level below includes everything the one before it asks.
+  - **Exploratory**: nothing depends on it yet. Work quickly, keep negative and odd results, and give each consequential choice, and the alternative set aside, one sentence where the work is done; that line is hard to recover later. Say in your reply what was done and that it is provisional. No check or evidence record is owed, and project context changes only when the current answer to one of its questions changes.
   - **Supporting a decision or claim**: later work in this project assumes it. Record the choice, the alternative set aside, what would change it, and one control, comparison, or sensitivity.
   - **Public or published**: people outside the project rely on it. The full route above is owed, including reproducibility, uncertainty, limits, and review.
-- Evidence is owed when a result is promoted, not when it is produced. Work freely at the exploratory level and pay at the boundary where something starts to depend on the result. Record that promotion as a decision; no tool assigns it.
-- Name the level when it changes what you are about to do, and let the scientist correct it. Never raise a level silently; ask.
-- A level relaxes only how much support a result must carry before work continues. At every level, protected material stays protected, discrepant and negative results are kept, authority stays with its owner, and nothing is described as better established than it is.
+- Evidence is owed when later work starts to rely on a result, not when the result is produced. Work freely while exploring, and pay at the point where something starts to depend on the answer. Name that result in the project's list of what later work relies on; no tool makes that call.
+- Name the level when it changes what you are about to do, and let the scientist correct it. Never raise a level silently; ask, and record only the outcome.
+- A level relaxes how much support a result must carry and how much needs writing down. Four things hold at every level, and each is met by what you do rather than by saying so: protected material stays protected, discrepant and negative results stay where they are, decisions stay with the people who make them, and nothing is described as better established than it is. Do not narrate that something stayed unchanged, did not happen, or was approved. Review of a result that later work relies on is evidence and is recorded as such; permission to run a step is not.
 
 ## Protected and Curated Material
 
-- Identify material that must not change silently: raw or accepted data, reference materials, participant- or community-controlled data, user-controlled model definitions, calibrations, schemas, curated decisions, and other project-designated inputs.
+- Identify material that must not change without a decision: raw or accepted data, reference materials, participant- or community-controlled data, user-controlled model definitions, calibrations, schemas, curated decisions, and other inputs the project names.
 - Record identifiers, provenance, and access rules; do not copy protected, sensitive, or controlled material into context merely to make it self-contained. Technical access does not establish permission to change, use, or share it.
-- Do not modify protected material unless change authority is clear. Record or surface uncertainty before acting.
-- Treat generated outputs as derived artifacts, not authoritative inputs, unless the project explicitly reviews and promotes them.
+- Change protected material only when it is clear who may approve the change; when it is not, ask before acting.
+- Treat generated outputs as derived artifacts, not trusted inputs, unless the project reviews them and decides to rely on them.
 
 ## Question, Method, Risk, and Limits
 
@@ -63,9 +63,9 @@ These parts may stay compact and may live in existing project sources. People an
 
 ## Evidence and Staleness
 
-- For a result something already depends on, keep enough identity to interpret or repeat material evidence: input origin and version; transformation or exclusion path; notebook, script, protocol, acquisition, model, or method identity; material settings; software, instrument, environment, backend, or hardware state; command or procedure; observed result and uncertainty; expected signal; date; review state; and important limits as relevant.
+- For a result something already depends on, keep enough identity to interpret or repeat material evidence: input origin and version; transformation or exclusion path; notebook, script, protocol, acquisition, model, or method identity; material settings; software, instrument, environment, backend, or hardware state; command or procedure; observed result and uncertainty; expected signal; date; review state; and important limits as relevant. Let the code that produces a result write machine detail such as settings, environment, resource use, timings, and file hashes beside its output; context needs the observed result, the expected signal, the limits, and a link.
 - When a relevant input, method, setting, calibration, dependency, backend, environment, or public behavior changes, rerun affected evidence or mark it and dependent outputs stale.
-- Preserve discrepant, null, and negative results and material deviations from the planned approach. Do not silently replace inconvenient evidence or continue to describe stale evidence as current validation.
+- Keep discrepant, null, and negative results and material deviations from the planned approach. Keeping a result means not deleting or hiding it, not retelling it in every later summary. Do not silently replace inconvenient evidence or keep describing stale evidence as current validation.
 
 ## Outputs and Claims
 
@@ -87,6 +87,6 @@ behavior, and the people who depend on it are adopting projects.
 
 ## Keeping Application Proportional
 
-Start with the compact fields in `.context/project.md`. Reuse an existing test plan, method note, data dictionary, benchmark record, issue tracker, or public specification when it already owns a fact. Add a focused context source only when the compact fields stop serving the work; the project-context skill named below owns that test.
+Start with the compact fields in `.context/project.md`. Reuse an existing test plan, method note, data dictionary, benchmark record, issue tracker, or public specification when it already holds a fact. Add a focused context source only when the compact fields stop serving the work; the project-context skill named below says when.
 
 For a scientifically material change, use `.agents/skills/spctx-scientific-change/SKILL.md` to turn this contract into an executable check and an evidence boundary. For context maintenance or growth, use `.agents/skills/spctx-project-context/SKILL.md`.

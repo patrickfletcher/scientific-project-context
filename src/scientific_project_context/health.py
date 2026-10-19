@@ -858,7 +858,7 @@ def check_practice_core(
     could hold every file, route nothing, and still be told it was fine.
     """
 
-    if adoption.practice_core != "exact":
+    if adoption.practice_core == "modified":
         findings.append(
             Finding(
                 "DH-PRACTICE-001",
@@ -866,10 +866,24 @@ def check_practice_core(
                 "scientific-practice",
                 SCIENTIFIC_PRACTICE_PATH,
                 None,
-                "The versioned scientific-practice core is missing, malformed, or modified.",
+                "The scientific-practice core differs from the installed package, either because the package was updated or because the marked section was edited here.",
                 f"managed core state: {adoption.practice_core}",
                 SCIENTIFIC_PRACTICE_PATH,
-                "Review your changes, then restore the marked section exactly; keep your own additions outside the markers.",
+                "Replace the marked section with the packaged core that `spctx init . --dry-run` prints; move any wording this project wants to keep below the markers first.",
+            )
+        )
+    elif adoption.practice_core != "exact":
+        findings.append(
+            Finding(
+                "DH-PRACTICE-001",
+                BROKEN,
+                "scientific-practice",
+                SCIENTIFIC_PRACTICE_PATH,
+                None,
+                "The versioned scientific-practice core is missing or malformed.",
+                f"managed core state: {adoption.practice_core}",
+                SCIENTIFIC_PRACTICE_PATH,
+                "Restore one marked core from the text `spctx init . --dry-run` prints; keep your own additions outside the markers.",
             )
         )
 

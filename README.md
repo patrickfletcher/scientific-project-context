@@ -75,9 +75,10 @@ That's the whole setup.
 ## After setup
 
 Mostly, you just work. `AGENTS.md` tells each agent to read
-`.context/project.md` first, and to update the context in the same turn when
-the work changes something that matters later, such as a new protected input, a
-changed method, or a result that something now depends on.
+`.context/project.md` first, and to rewrite the affected part of the context in
+place when the work changes something that matters later, such as a new
+protected input, a changed answer, or a result that something now depends on.
+Run history stays in Git instead of piling up in the context.
 
 Three skills cover the moments that need more care:
 
@@ -105,9 +106,10 @@ you want:
 - "The calibration notes have outgrown the summary. Give them their own
   document."
 
-Exploratory work stays light: the practice agreement asks only for a note of
-what was done and that it's provisional. Checks and evidence come due once a
-result starts to support a decision or a claim, or goes public.
+Exploratory work stays light: the agent tells you in its reply what it did and
+that the result is provisional, and the context changes only when an answer
+does. Checks and evidence come due once a result starts to support a decision or
+a claim, or goes public.
 
 ## What gets added
 

@@ -5,13 +5,13 @@
 <!-- BEGIN SPCTX PROJECT CONTEXT ROUTING v1 -->
 Read `.context/project.md` at the start of work for the smallest current project context. If `.context/README.md` exists, use it to select only the additional source needed by the task.
 
-When work changes durable project facts, current focus, scientific constraints, evidence status, or context routes, update the authoritative source in the same turn. Use `.agents/skills/spctx-project-context/SKILL.md` to initialize, refresh, separate, retire, or upgrade context.
+When work changes what the project currently knows, its current focus, a protected input, what later work relies on, or a context route, rewrite that part of the context in place before you finish. Run history, what stayed unchanged, and who approved what belong in Git and the conversation, not in context. Use `.agents/skills/spctx-project-context/SKILL.md` to initialize, refresh, separate, retire, or upgrade context.
 
 For work that could affect scientific meaning, protected inputs, methods, evidence, artifacts, validation, or claims, read `.context/scientific-practice.md` and use `.agents/skills/spctx-scientific-change/SKILL.md`.
 
 For text written for readers outside this work, such as a README, contributor guide, methods or results section, figure caption, status report, or manuscript, use `.agents/skills/spctx-public-writing/SKILL.md`.
 
-Keep project-specific application in `.context/project.md` or an authoritative source it links. If another instruction materially conflicts with the scientific safeguards, stop and ask the user or relevant domain authority to resolve it.
+Keep project facts in `.context/project.md` or a document it links. If another instruction conflicts with the scientific safeguards, stop and ask the user or the responsible scientist to resolve it.
 <!-- END SPCTX PROJECT CONTEXT ROUTING v1 -->
 
 Do not scan every policy, proposal, or reference document. Follow the smallest relevant route and stop when the target and check are clear.
@@ -23,7 +23,7 @@ This repository uses Scientific Project Context on itself. Root-specific facts a
 - **What this project is**: the Scientific Project Context product — a six-file Markdown starter, three Agent Skills, and the `spctx` CLI. See `.context/project.md` for current state and open decisions.
 - **Environment**: `.venv/` at the repository root, where `spctx` is installed. Do not substitute system Python.
 - **Run and test**: from the repository root — `python -m unittest discover -s tests` and `python -m compileall -q src tools`.
-- **Reinstall after changing packaged resources**: `python -m pip install .`, then `spctx --version`.
+- **Reinstall after changing packaged resources**: `python -m pip install .`, then `spctx --version`. The current `.venv/` has no pip; use `uv pip install . --python .venv\Scripts\python.exe` there.
 - **Verify built artifacts**: `python tools\check_package_artifacts.py --source-root . --direct-wheel <wheel> --sdist <sdist> --sdist-wheel <sdist-built-wheel>`.
 - **Context tools**: `spctx check .` after changing context files; `spctx sync-index . --dry-run` then `spctx sync-index .` when focused sources change.
 - **Protected inputs**: packaged resources in `template/` and recorded trial observations in `.context/evaluation.md`. Changing them requires explicit review.

@@ -4,35 +4,30 @@ Purpose: explain the order of the next few product moves.
 Read when: planning beyond the current task.
 Update when: trial evidence changes the sequence or a real release effort begins.
 
-## Now - Hold the Surface Still and Run a Colleague Trial
+## Now - Upgrade T2 and Watch It
 
-The shipped surface is frozen for the trial: the six starter files, the three
-skills, the three commands, the report fields, and the check identifiers. A
-colleague's session must measure the product, not a version that moved under
-them, and changing any of it mid-trial also invalidates what the trial observed.
+dev23 carries the response to the first colleague trial. `.context/evaluation.md`
+maps each T2 observation to its change, and `.context/product.md` holds the
+resulting rule that context records current state.
 
-Two exceptions, and nothing else: a defect that blocks a colleague from working,
-and wording a colleague reports as wrong or misleading. Record both, and the
-version they landed in, because they are trial evidence.
+Upgrading T2 tests the change twice: whether upgrade mode carries a new route
+and core into a project whose own rules also contributed, and whether its
+context then stays current state. `.context/evaluation.md` names the measure.
+The project plans its own overhaul at the same time, so separate what the
+upgrade changed from what the project rewrote.
 
-Resist improvements during this period. The cheapest way to waste the trial is
-to act on the first piece of feedback before the rest arrives.
+Hold the rest still while that runs: the six files, three commands, report
+fields, and check identifiers. Record which version each trial runs.
 
-## Next - Read the Trial Before Deciding Anything
+## Next - The Remaining Trial Questions
 
-`.context/evaluation.md` owns what to record. The questions that matter
-are whether the skills are found and followed without being named, whether
-exploratory work stays cheap, whether the summary lines prompt anything, and
-whether context maintenance costs less than it returns.
+Whether skills are found without being named, whether the summary lines prompt
+anything, whether `spctx-public-writing` earns its place, and which candidate
+listed under Unresolved Questions in `.context/project.md` earns its cost. Each
+needs a reason from a trial rather than from this repository's own reasoning.
 
-The open product questions wait for that evidence: whether
-`spctx-public-writing` earns its permanent place, and which of the remaining
-candidates listed under Unresolved Questions in `.context/project.md` is worth
-its cost. Each needs a reason from the trial rather than from this repository's
-own reasoning.
-
-Retain the no-hook baseline. Pilot the read-only session-start health hook only
-if the trial shows structural failures going unnoticed.
+Retain the no-hook baseline. T2's failures were in prose, which a structural
+hook cannot see.
 
 ## Later - Supported Distribution
 

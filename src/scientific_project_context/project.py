@@ -34,13 +34,13 @@ CONTEXT_ROUTE_BLOCK = "\n".join(
         CONTEXT_ROUTE_BEGIN,
         "Read `.context/project.md` at the start of work for the smallest current project context. If `.context/README.md` exists, use it to select only the additional source needed by the task.",
         "",
-        "When work changes durable project facts, current focus, scientific constraints, evidence status, or context routes, update the authoritative source in the same turn. Use `.agents/skills/spctx-project-context/SKILL.md` to initialize, refresh, separate, retire, or upgrade context.",
+        "When work changes what the project currently knows, its current focus, a protected input, what later work relies on, or a context route, rewrite that part of the context in place before you finish. Run history, what stayed unchanged, and who approved what belong in Git and the conversation, not in context. Use `.agents/skills/spctx-project-context/SKILL.md` to initialize, refresh, separate, retire, or upgrade context.",
         "",
         "For work that could affect scientific meaning, protected inputs, methods, evidence, artifacts, validation, or claims, read `.context/scientific-practice.md` and use `.agents/skills/spctx-scientific-change/SKILL.md`.",
         "",
         "For text written for readers outside this work, such as a README, contributor guide, methods or results section, figure caption, status report, or manuscript, use `.agents/skills/spctx-public-writing/SKILL.md`.",
         "",
-        "Keep project-specific application in `.context/project.md` or an authoritative source it links. If another instruction materially conflicts with the scientific safeguards, stop and ask the user or relevant domain authority to resolve it.",
+        "Keep project facts in `.context/project.md` or a document it links. If another instruction conflicts with the scientific safeguards, stop and ask the user or the responsible scientist to resolve it.",
         CONTEXT_ROUTE_END,
     )
 )

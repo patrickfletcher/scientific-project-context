@@ -2,11 +2,11 @@
 
 Purpose: compact, current context for safe work by human and agent contributors.
 Read when: starting work, checking project intent or current reality, or deciding whether more documentation is justified.
-Update when: project purpose, executable state, current focus, scientific constraints, or sharing intent changes.
+Update when: the purpose, a current answer, the focus, protected material, what later work relies on, or sharing intent changes; rewrite the affected part in place.
 
-Keep this file brief. This is not a form that must be completed: delete prompts that do not apply, and use explicit unknowns instead of invented facts. A person or agent may draft it from available evidence; the scientist or relevant domain authority reviews scientific meaning, while the project or data owner reviews project intent and permissions. Add a focused source only when recurring detail persists, updates independently, and materially harms this file's scanability.
+Keep this file to about one screen, and describe what is known now rather than how the project got here; Git keeps the history. Agents imitate this file, so write it the way you want the project's other documents written. This is not a form that must be completed: delete prompts that do not apply, and use explicit unknowns instead of invented facts. A person or agent may draft it from available evidence; the responsible scientist reviews scientific meaning, and the project or data owner reviews intent and permissions. Add a focused source only when recurring detail persists, updates independently, and materially harms this file's scanability.
 
-This file owns scientific purpose, current state, evidence, risks, and open decisions. `AGENTS.md` owns environment, commands, and conventions; `README.md` owns human setup and command documentation. Link to them rather than repeating them here.
+This file holds scientific purpose, current state, findings, risks, and open decisions. `AGENTS.md` holds environment, commands, and conventions; `README.md` holds human setup and command documentation. Link to them rather than repeating them here.
 
 `.context/scientific-practice.md` is the stable scientific contract. This file records how that contract applies to the current project.
 
@@ -38,14 +38,14 @@ This file owns scientific purpose, current state, evidence, risks, and open deci
 
 **Smallest useful check**: [a check or observation you could actually perform, plus the expected value, tolerance, uncertainty, property, comparison, control, or failure signal; say why it is premature if no scientific question or behavior is chosen yet]
 
-**Current evidence and limits**: [observed result, input and procedure identity, relevant uncertainty, review state, supported domain, and material limits, or `no evidence yet`; say which level these results sit at]
+**Current findings and limits**: [the current answer to each question the work is asking, with its uncertainty and main limit, or `no findings yet`; say which level these results sit at. Rewrite an answer when it changes, and link to where run details live rather than copying them]
 
 **What later work relies on**: [the settled choices later work now assumes — units, conventions, exclusions, parameter ranges, calibration, initial or boundary conditions, randomization — or `nothing yet`. Name only what a change would now break; anything not named here can still change freely]
 
 That last line decides how much evidence a change here owes. While it names
-nothing, work stays exploratory and owes only a note that it is provisional. Add
-an entry at the moment you decide to rely on something, and say so; no tool can
-make that call for you.
+nothing, work stays exploratory and owes nothing beyond saying it is
+provisional. Add an entry at the moment you decide to rely on something, and say
+so; no tool can make that call for you.
 
 ## Unresolved Questions
 

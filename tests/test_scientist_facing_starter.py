@@ -87,8 +87,34 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
         """Real use duplicated environment and commands into all three places."""
 
         project = self.read(".context/project.md")
-        self.assertIn("`AGENTS.md` owns environment, commands, and conventions", project)
-        self.assertIn("`README.md` owns human setup", project)
+        self.assertIn("`AGENTS.md` holds environment, commands, and conventions", project)
+        self.assertIn("`README.md` holds human setup", project)
+
+    def test_context_is_current_state_rewritten_in_place(self) -> None:
+        """Real use turned per-run update rules into run logs that two cleanups did not fix."""
+
+        project = self.read(".context/project.md")
+        self.assertIn("about one screen", project)
+        self.assertIn("**Current findings and limits**", project)
+        self.assertNotIn("input and procedure identity", project)
+        skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
+        for phrase in (
+            "still not context: it is a log",
+            "not an event\nsuch as a run finishing",
+            "rewrite it as current state instead of\ntrimming entries",
+            "change that rule as well, or the log grows back",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, skill)
+
+    def test_shipped_text_keeps_governance_vocabulary_out(self) -> None:
+        """Real use copied the starter's promotion and ownership terms into project prose."""
+
+        for path in sorted(TEMPLATE.rglob("*.md")):
+            text = path.read_text(encoding="utf-8").casefold()
+            for term in ("promot", "authoritative source", "authoritative home", "domain authority"):
+                with self.subTest(path=path.relative_to(TEMPLATE).as_posix(), term=term):
+                    self.assertNotIn(term, text)
 
     def test_agents_file_prompts_for_essentials_and_states_ownership(self) -> None:
         agents = self.read("AGENTS.md")
@@ -103,6 +129,9 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
             "`spctx check .`",
             "## Where Facts Live",
             "this project's vocabulary",
+            # Real use showed the exploratory default and writing rule must be always read.
+            "Most work here is exploratory until something relies on it",
+            "leave out what did not happen, what stayed unchanged, and who approved it",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, agents)
@@ -186,8 +215,22 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
         skill = self.read(".agents/skills/spctx-scientific-change/SKILL.md")
         self.assertIn("that short list is\nthe test", skill)
         self.assertIn("exploratory until someone decides to rely on it", skill)
-        self.assertIn("Promotion is the user's decision", skill)
+        self.assertIn("propose it when the work looks load-bearing", skill)
         self.assertIn("**What later work relies on**", self.read(".context/project.md"))
+
+    def test_scientific_change_keeps_exploratory_work_in_the_reply_and_on_the_question(self) -> None:
+        """Real use recorded every run and engineered around compute one approved step at a time."""
+
+        skill = self.read(".agents/skills/spctx-scientific-change/SKILL.md")
+        for phrase in (
+            "name the scientific question it answers",
+            "do not build variants,\nguards, or retry chains",
+            "say in your reply what it showed",
+            "rather than adding an entry for the run",
+            "Lead with what the work showed about the scientific question",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, skill)
 
     def test_scientific_change_skill_can_pay_the_deferred_evidence_cost(self) -> None:
         """Deferring evidence to promotion only works if promotion says how to pay it."""
@@ -200,6 +243,12 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
         skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
         self.assertIn("## 9. Upgrade to a New Package Version", skill)
         self.assertIn("spctx check . --diff", skill)
+        upgrade = skill[skill.index("## 9. Upgrade") : skill.index("## 10.")]
+        # The core carries most changes between versions, and unnumbered work gets skipped.
+        self.assertIn("Where the scientific-practice core differs", upgrade)
+        steps = [line.split(".", 1)[0] for line in upgrade.splitlines() if line[:1].isdigit()]
+        # An earlier package shipped this list with a step number repeated.
+        self.assertEqual([str(n) for n in range(1, len(steps) + 1)], steps)
 
     def test_practice_core_covers_traceability_uncertainty_and_evidence_boundaries(self) -> None:
         practice = self.read(".context/scientific-practice.md").casefold()
@@ -231,10 +280,14 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
             "**Exploratory**",
             "**Supporting a decision or claim**",
             "**Public or published**",
-            "owed when a result is promoted, not when it is produced",
+            "owed when later work starts to rely on a result, not when the result is produced",
             "Never raise a level silently",
-            # A level may relax evidence, never protection, honesty, or authority.
+            # A level may relax evidence, never protection, honesty, or who decides.
             "protected material stays protected",
+            # Real use narrated compliance after every step; the rules are met by acting.
+            "met by what you do rather than by saying so",
+            "permission to run a step is not",
+            "not retelling it in every later summary",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, core)
@@ -286,7 +339,8 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
         )
         for phrase in (
             ".context/project.md",
-            "authoritative source in the same turn",
+            "rewrite that part of the context in place",
+            "belong in Git and the conversation, not in context",
             "spctx-project-context/SKILL.md",
             "scientific-practice.md",
             "spctx-scientific-change/SKILL.md",

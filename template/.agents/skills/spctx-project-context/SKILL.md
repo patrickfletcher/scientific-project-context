@@ -17,7 +17,7 @@ this procedure was followed or the work merely resembled it.
 - **initialize**: establish the minimum context needed for the next meaningful step.
 - **refresh**: reconcile current context with repository reality.
 - **separate**: move one recurring topic from the compact context into a focused source.
-- **retire**: remove a source from current context after preserving any still-current rule, evidence, or route in its authoritative home.
+- **retire**: remove a source from current context after moving any still-current rule, evidence, or route to the place it belongs.
 - **localize**: record this project's field conventions, review requirements, and evidence expectations in the practice contract.
 - **upgrade**: reconcile the project's packaged files with a newly installed `spctx` version.
 
@@ -59,7 +59,7 @@ common and most expensive initialization error: the same environment,
 dependency, and command detail ends up copied into all three places, and none of
 them is trustworthy afterward.
 
-| Place | Reader | Owns |
+| Place | Reader | Holds |
 | --- | --- | --- |
 | `AGENTS.md` or another instruction file the agents in use actually read | agents, every session | Operational constraints to honor before acting: environment activation and which tools are installed there, run and test commands, protected inputs in one line, conventions, and routes. |
 | `README.md` and other public documentation | humans, including outsiders | Purpose in plain language, setup, commands, and outputs. |
@@ -92,7 +92,7 @@ Installing context files is not the same as activating them. Reliable maintenanc
 
 - For a new project using the packaged `AGENTS.md`, the route becomes active after initialization is applied.
 - For a retrofit, keep existing instructions authoritative. Compare them with the compact project-context routing block reported by `spctx init`, resolve material conflicts, and ask the project authority to approve adding only that route. Replace any earlier SPCTX routing block instead of duplicating it; do not replace the full instruction file merely to install this system.
-- Once the route is active in a retrofit, the project has the skills but none of the packaged instruction guidance. Offer those sections one at a time, rewritten for this project, and let the user refuse any of them. Start with `Project Essentials`: real use showed that an agent without it invents its own setup. Leave out anything a conventions file here already owns, and link to that file instead. Git is the backup; do not save a second copy of the instruction file.
+- Once the route is active in a retrofit, the project has the skills but none of the packaged instruction guidance. Offer those sections one at a time, rewritten for this project, and let the user refuse any of them. Start with `Project Essentials`: real use showed that an agent without it invents its own setup. Leave out anything a conventions file here already covers, and link to that file instead. Git is the backup; do not save a second copy of the instruction file.
 - The complete canonical procedures live in `spctx-project-context` and `spctx-scientific-change` under `.agents/skills/`. Confirm that the agents in use discover this layout; file presence alone is not behavioral evidence.
 - Claude Code reads neither `.agents/skills/` nor any other path under `.agents/`, and reads `AGENTS.md` only while the project has no `CLAUDE.md` above the working directory. For a project that uses it, `spctx init . --claude` adds pointer skills under `.claude/skills/` that carry the same descriptions and route to the canonical files. Where a `CLAUDE.md` already exists, ask the project authority to add an `@AGENTS.md` import line to it rather than keeping a second copy of the instructions.
 - Beyond that, other skill layouts are outside what this system manages. Never duplicate a procedure body to reach another host.
@@ -109,11 +109,16 @@ Populate or refresh only applicable sections of `.context/project.md`:
 - what later work now relies on, kept short: the default is that nothing is settled, and only the exceptions are named
 - main way the current result or behavior could be wrong
 - smallest useful check or observation and expected signal
-- current evidence, uncertainty, important limitations, assumptions, and settings
+- current findings: the answer to each open question, its uncertainty and main limit, and the assumptions and settings it rests on
 - unresolved questions that must persist
 - sharing or reuse intent when it is already relevant
 
-Remove resolved prompts. Use explicit unknowns rather than filling sections speculatively. Link to authoritative existing sources instead of copying them, and leave environment, dependency, and command detail to `AGENTS.md` and `README.md`.
+Remove resolved prompts. Use explicit unknowns rather than filling sections speculatively. Link to existing sources instead of copying them, and leave environment, dependency, and command detail to `AGENTS.md` and `README.md`.
+
+Write it as current state, rewritten in place and short enough to read on one
+screen. It is also the example later sessions imitate: lead with what is known,
+state each limit once, and keep out run history, permissions, and lists of what
+did not change.
 
 Start every current context source with short `Purpose`, `Read when`, and `Update when` lines, so a reader can pick the right one without opening all of them.
 
@@ -133,7 +138,14 @@ Keeping a fact in the compact context is the default. Suggest a focused source o
 
 Common signals include several independently moving tasks, consequential choices whose rationale must be revisited, multiple validation/evidence states, non-obvious artifact transformations or change boundaries, recurring scientific conventions, or multi-stage sequencing.
 
-These signals are examples, not a required document taxonomy. Prefer an established issue tracker, README, data dictionary, architecture document, test plan, or public specification when it already provides the authoritative home. A project-specific source may be clearer than any packaged starter.
+These signals are examples, not a required document taxonomy. Prefer an established issue tracker, README, data dictionary, architecture document, test plan, or public specification when it already holds the fact. A project-specific source may be clearer than any packaged starter.
+
+A record that gains an entry each time a run finishes or a step completes meets
+all three conditions and is still not context: it is a log. Leave run records
+beside the outputs, written by the code that produced them, and leave narrative
+history to Git. A focused source's `Update when` line should name a change in
+what it says is true, such as an answer, a method, or a decision, not an event
+such as a run finishing.
 
 A context index becomes useful only when several focused sources make selection non-obvious.
 
@@ -155,7 +167,14 @@ Do not repeat a declined suggestion unless the recurring detail materially chang
 
 ## 8. Maintain and Retire Context
 
-Maintenance is event-driven, not a periodic documentation ritual. At the end of work, update only authoritative facts that actually changed: executable reality, current focus or next step, protected inputs, scientific risk, checks, evidence or staleness, unresolved questions, and context routes. Remove resolved prompts and completed transient work rather than accumulating a work log.
+Maintenance is event-driven, not a periodic documentation ritual. At the end of work, update only facts that actually changed: executable reality, current focus or next step, protected inputs, scientific risk, checks, current findings or staleness, unresolved questions, and context routes. Remove resolved prompts and completed transient work rather than accumulating a work log.
+
+When a document has already become a log, rewrite it as current state instead of
+trimming entries: keep the current answers, their limits, and what is still
+open, and let Git hold the rest. Trimming leaves the style in place for the next
+session to copy. If an instruction or a source's `Update when` line asks for an
+entry per run, change that rule as well, or the log grows back; real use saw two
+cleanups undone within days this way.
 
 Ask once, at that point, whether anything became load-bearing during the work: a
 choice, a parameter, a calibration, an exclusion that the next piece of work will
@@ -170,7 +189,7 @@ treat that as a prompt to prune, not as a list to clear. It matches words only,
 so it sees a copied passage and misses the same fact reworded. Read the
 affected documents and look for the reworded case too.
 
-For each fact stated twice, decide which document owns it: the one whose update
+For each fact stated twice, decide which document keeps it: the one whose update
 trigger and responsible party match the fact, usually the most specific one.
 Leave a short link from the other. Repetition is fine when the two statements
 serve different readers or moments, such as a one-line operational constraint in
@@ -182,8 +201,8 @@ a single home.
 When a context source is no longer current or useful:
 
 1. Identify any rule, decision, evidence, uncertainty, or route that still matters.
-2. Move each still-current item to its authoritative project or public source without duplicating it.
-3. With normal project change authority, remove the retired source from current navigation and from the working tree. Use Git history for superseded planning and narrative unless project governance requires a separate record.
+2. Move each still-current item to the project or public document where it belongs, without duplicating it.
+3. With the project's normal permission to change files, remove the retired source from current navigation and from the working tree. Use Git history for superseded planning and narrative unless project governance requires a separate record.
 4. If focused routes changed, preview and apply `spctx sync-index`; then run `spctx check .`.
 
 ## 9. Upgrade to a New Package Version
@@ -196,25 +215,30 @@ files. The trigger is the new version, not a change in the repository.
    trigger phrasings is reported as tuning, not as something to undo.
 2. Where the routing block differs, replace the text between its markers with
    the current packaged block. It is the only part of the instruction file the
-   package owns, and a stale one can point at skills or files that have moved.
+   package maintains, and a stale one can point at skills or files that have moved.
    Everything outside the markers is the project's.
-3. Run `spctx init . --dry-run` to see whether the new version ships a file this
+3. Where the scientific-practice core differs, replace the text between its
+   markers with the packaged core that `spctx init . --dry-run` prints. A new
+   version usually changes it, so a difference here is expected rather than a
+   sign that someone edited it. Keep the project's own section below the
+   markers, and move any wording the project added inside them there first.
+4. Run `spctx init . --dry-run` to see whether the new version ships a file this
    project does not have yet, then apply it with `spctx init .`. Occupied files
    are never overwritten.
-4. Where a skill body diverged, restore the packaged body. `spctx init . --dry-run`
+5. Where a skill body diverged, restore the packaged body. `spctx init . --dry-run`
    prints the packaged text of every retained skill, and
    `--json` carries the same text under `context_adoption.suggested_skills`, so
    take it from there rather than reconstructing it from a diff. Project facts
    belong in the instruction file or `.context/`, not in a modified procedure.
-5. Where a description diverged, restore the packaged text and re-append this
+6. Where a description diverged, restore the packaged text and re-append this
    project's phrasings after the separator, following step 11. Never
    drop packaged trigger categories to make room for project ones.
-6. Read the whole always-read instruction file, not only the sections you just
+7. Read the whole always-read instruction file, not only the sections you just
    edited, and remove any rule it states twice, once there and once in a skill
    or a context source. Wording an older packaged version left behind does not
    become project policy by sitting there. Keep the project's own rules and
    delete only the duplicate.
-7. Re-run `spctx check .`, then report on separate lines: which packaged changes
+8. Re-run `spctx check .`, then report on separate lines: which packaged changes
    you applied; how many duplicated rules you removed and which duplicates you
    deliberately kept; whether each skill description carries this project's
    phrasings, adding them per step 11 if it does not; and anything the

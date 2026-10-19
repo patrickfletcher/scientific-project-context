@@ -80,8 +80,12 @@ third skill. The block routes to the two context files and the procedures that
 maintain them; `spctx-public-writing` has no context file of its own and is
 discovered natively from `.agents/skills/` by both supported harnesses. Bumping
 the marker would make every existing project's route read as absent and invite
-duplicate blocks, which is a real migration cost for no behavioral gain. The
-packaged `AGENTS.md` routes to the new skill in prose outside the markers.
+duplicate blocks, which is a real migration cost for no behavioral gain.
+
+dev23 rewrote the block's update rule after T2 and kept v1 for the same reason.
+An adopting project's older block reads as modified, which `check --diff` shows
+and the `upgrade` mode replaces; its practice core reads the same way until
+restored.
 
 ## Report Scope
 
@@ -89,7 +93,11 @@ Setup state appears in `check` as summary lines, not findings: whether the route
 is present, how many starter prompts remain, and the other state lines below.
 `check` keeps the `DH-PRACTICE-001` observation, because silent modification of
 the versioned scientific-practice core is an ongoing risk rather than a setup
-step.
+step. Every package version that changes the core also produces it in each
+adopting project, so since dev23 its text names a package update as one cause
+and points to the core `init --dry-run` prints, instead of asking the project to
+review changes it never made. Its kind stays `broken` while the report fields
+are held still for the trials.
 
 The context-adoption block appears only in the `init` report, where activation
 is the subject. Human `check` output carries the state lines, observations, and

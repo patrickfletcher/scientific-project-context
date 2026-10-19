@@ -40,9 +40,10 @@ Writing above the level the work has reached is the common way public text goes
 wrong. Something nothing depends on yet may be described, not concluded from.
 "We found" and "these data are consistent with" are different claims.
 
-Publishing is itself a promotion. If drafting would move a result to a level it
-has not earned, that is a scientific change rather than a wording choice; hand
-it to `spctx-scientific-change` instead of settling it in prose.
+Publishing is itself a decision to rely on a result. If drafting would move a
+result to a level it has not earned, that is a scientific change rather than a
+wording choice; hand it to `spctx-scientific-change` instead of settling it in
+prose.
 
 ## 3. Write Only From Confirmed Facts
 
@@ -53,15 +54,15 @@ project does not state.
 - Mark anything unconfirmed rather than smoothing it into the prose.
 - Do not restate a number the project has not recorded. If a count, tolerance,
   or effect size is needed and absent, ask or leave it explicitly open.
-- Prefer linking an authoritative source over copying it. Once a public
-  document is authoritative, internal context links to it instead of keeping a
+- Prefer linking the source of a fact over copying it. Once a public document
+  is where a fact lives, internal context links to it instead of keeping a
   shadow copy.
 
 ## 4. Keep Each Fact in One Place
 
-Public documentation owns purpose in plain language, setup, commands, and
-outputs. Agent instructions own operational constraints. Project context owns
-scientific purpose, current state, evidence, risks, and open decisions. Write
+Public documentation holds purpose in plain language, setup, commands, and
+outputs. Agent instructions hold operational constraints. Project context holds
+scientific purpose, current state, findings, risks, and open decisions. Write
 the fact where it belongs and link from the others.
 
 Two specific leaks are common and worth checking for by name:

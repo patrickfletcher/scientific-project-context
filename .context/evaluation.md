@@ -90,6 +90,26 @@ is uncontrolled observation by the repository owner, not a scenario trial.
 | T1 | After months of use the project had written nothing in the practice file's own section, while adding field rules to `AGENTS.md` instead. | `localize` mode and a report line for the project's practice notes. |
 | T1 | The new stale-path and practice-notes signals were run before release: both stayed quiet where they should. An earlier draft of each misread the project. | Narrowed both signals before shipping (dev20). Catching real drift is still unobserved. |
 
+T2 is a colleague's computational analysis repository, retrofit over substantial
+existing instructions with a pre-dev22 build, upgraded to dev22 two weeks later,
+and used daily for about three weeks. `spctx` was installed in the project's
+environment and run during the trial. No transcripts were kept and the agent host
+was not recorded, so skill selection is not observable; the evidence is the Git
+history and a written audit of the project's documents. The packaged core and
+skill bodies were unmodified. Some project rules that contributed below were
+added during the trial in the author's own maintenance sessions.
+
+| Trial | Observation | What changed |
+| --- | --- | --- |
+| T2 | Every setup line was complete: route active, prompts answered, all three triggers tuned at setup, practice notes written, relied-on list named. The upgrade kept the tuning. | First tuning observation outside the author's repositories; whether it was prompted is unknown. |
+| T2 | The check, risk, and negative-result prompts produced habits the project chose to keep: simulated positive and negative controls before real data, a concrete failure-mode list, and negative results kept beside common and shuffled comparators. | Confirms those prompts; no change. |
+| T2 | Context became a run log. The compact file grew about fivefold in six days after an upgrade-time refresh had cut over a thousand lines; an earlier hand cleanup was also undone within days. Focused sources whose update trigger was an event, such as a run finishing, reached hundreds of lines. | dev23: the route and starter ask for current state rewritten in place, the split test excludes logs, and refresh rewrites a log instead of trimming it. |
+| T2 | The prose turned defensive: what did not happen, what stayed unchanged, and who approved each step, about four times as dense per line as at setup. Permission given in conversation was written into documents and code. | dev23: the core's every-level rules are met by acting rather than stating, the exploratory level relaxes recording too, and permission to run a step stays out of the record. |
+| T2 | This product's ownership, authority, promotion, and level vocabulary reached the project's prose, this time from the practice core and skills. | dev23: plain-language pass over the core, starter, and skills; a starter test keeps promotion and source-ownership terms out of shipped text. |
+| T2 | No writing guidance reached internal documents. `spctx-public-writing` excludes them, and a project-added style section was ignored: agents imitated the documents they read. | dev23: a writing line in the starter's working style, and the compact file framed as the example later sessions copy. |
+| T2 | Exploratory work became expensive again by a different route from T1: compute engineering and its documentation rather than validation evidence, each step approved one at a time on the agent's proposal. | dev23: `spctx-scientific-change` asks for the question before a sub-investigation, prefers shrinking a computation to engineering around it, and reports what was learned first. |
+| T2 | `check` was run, and its repeated-passage findings were copied into a context document instead of being resolved. It reported nothing about any of the above, as designed. | Size and banned-word checks declined: moving text to another file or substituting a synonym clears either, which fails the report test in `product.md`. |
+
 ## Agent Skill Behavior Scenarios
 
 Retain these scenarios for comparison on Codex and Copilot Chat. Structural
@@ -147,6 +167,9 @@ the structural-only boundary intact.
 
 ## Next Useful Evidence
 
+- After dev23 reaches T2 by upgrade, whether its context stays current
+  state for two weeks: compact-file length and the density of defensive words,
+  measured outside the product.
 - Colleague trials and further author trials, recorded under the rules above:
   whether skills are found without being named, whether exploratory work stays
   cheap, whether the report lines prompt anything, and whether context upkeep

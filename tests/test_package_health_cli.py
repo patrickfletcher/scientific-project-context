@@ -314,6 +314,10 @@ class PackageHealthCliTests(unittest.TestCase):
         self.assertEqual(0, exit_code)
         self.assertEqual(1, payload["observed"][health.BROKEN])
         self.assertIn("DH-PRACTICE-001", [item["check_id"] for item in payload["findings"]])
+        core = next(i for i in payload["findings"] if i["check_id"] == "DH-PRACTICE-001")
+        # After an upgrade the old core is the package's text, so blaming the project misleads.
+        self.assertIn("the package was updated", core["message"])
+        self.assertIn("spctx init . --dry-run", core["next_action"])
 
     def test_missing_project_route_is_left_to_init_not_reported_every_run(self) -> None:
         project_context = self.project / ".context/project.md"
