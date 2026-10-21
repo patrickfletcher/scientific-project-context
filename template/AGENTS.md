@@ -25,7 +25,7 @@ Answer each line from this project and delete any that does not apply.
 - **Run and test**: [the exact commands, including the working directory they assume]
 - **Protected inputs**: [data, reference material, or curated decisions that must never be modified, renamed, moved, or deleted; the reasoning belongs in `.context/project.md`]
 - **Conventions**: [code style, structure, and review rules, or a link to the file that already covers them]
-- **Context tools**: [name the environment `spctx` is installed in and its path relative to the repository or your home directory, without a user name or version number; or say it is unavailable here]. `spctx check .` reports what this project has set up so far and what it has not; it passes no judgement and fails nothing. `spctx sync-index . --dry-run` previews the generated context index and `spctx sync-index .` applies it.
+- **Context tools**: [name the environment `spctx` is installed in, its path relative to the repository or your home directory, and the command that upgrades it there from the source it came from, without a user name or version number; or say it is unavailable here]. `spctx check .` reports what this project has set up so far and what it has not; it passes no judgement and fails nothing. `spctx sync-index . --dry-run` previews the generated context index and `spctx sync-index .` applies it.
 
 ## Where Facts Live
 

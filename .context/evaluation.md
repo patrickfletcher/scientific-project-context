@@ -185,12 +185,16 @@ the structural-only boundary intact.
 
 ## Next Useful Evidence
 
-- After dev24 reaches T2 by upgrade: whether the session restores the context
+- After dev25 reaches T2 by upgrade: whether the session restores the context
   skill before following its steps, offers instruction-file sections in the
-  packaged wording, and moves the hand-written index list when `sync-index`
-  stops on it; then whether the context stays current state for two weeks,
-  measured by compact-file length, index length, and the density of defensive
-  words outside the product, from a baseline taken at handback.
+  packaged wording, and moves the hand-written index list when `check` reports
+  the old `README.md` beside the new index; then whether the context stays
+  current state for two weeks, measured by compact-file length, index length,
+  and the density of defensive words outside the product, from a baseline taken
+  at handback.
+- The first upgrade from dev25 onward where the user also asks for the install:
+  whether the session uses the recorded upgrade command or finds the source,
+  and never installs the package by name from a public index.
 - A cold-start test before handback, on a scratch clone and only with the
   colleague's agreement to other providers: fresh sessions in two or three
   harnesses, each given the same three prompts (the current state and next

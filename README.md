@@ -178,6 +178,11 @@ Then ask your agent to use the spctx-project-context skill to bring the project
 up to date. It compares your files with the new version and reports what it
 changed.
 
+You can also ask the agent to do both, for example "There's a new version of
+scientific-project-context. Install it in this project's environment and bring
+the project up to date." It uses the upgrade command recorded in `AGENTS.md`;
+if none is recorded, it looks up where the current version came from, or asks.
+
 ## Trying it out
 
 We're looking for feedback on usage in real projects. Use it the way you normally

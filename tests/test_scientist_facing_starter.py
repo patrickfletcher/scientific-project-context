@@ -351,6 +351,14 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
         self.assertIn("Search code, notebooks, scripts, and configuration for the source's path", skill)
         self.assertIn("Leave out user names and version numbers", skill)
 
+    def test_install_on_request_uses_the_recorded_source_never_a_public_index(self) -> None:
+        # The package name is unpublished, so installing it by name could fetch someone else's package.
+        skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
+        self.assertIn("install a new version of scientific-project-context (`spctx`)", skill)
+        self.assertIn("Never\ninstall this package by name from a public package index", skill)
+        self.assertIn("Record the command that upgrades `spctx`", skill)
+        self.assertIn("the command that upgrades it there from the source it came from", self.read("AGENTS.md"))
+
     def test_upgrade_restores_its_own_procedure_first_and_works_from_packaged_text(self) -> None:
         """An upgrade followed the project's older copy, and wrote always-read lines from the core."""
 

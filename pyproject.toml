@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scientific-project-context"
-version = "0.1.0.dev24"
+version = "0.1.0.dev25"
 description = "Maintained context for understandable and verifiable scientific projects"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"

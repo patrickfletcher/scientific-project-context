@@ -1,6 +1,6 @@
 ---
 name: spctx-project-context
-description: Set up or repair a project's working context so the next contributor or session can pick the work up safely. Use when asked to "initialize" or "set up context" in a repository, retrofit an existing project, bring a project up to date after installing a new version of this package, refresh context that no longer matches the code or data, decide whether a topic needs its own document, or retire a stale document. Do not use for ordinary implementation, analysis changes, or writing public documentation.
+description: Set up or repair a project's working context so the next contributor or session can pick the work up safely. Use when asked to "initialize" or "set up context" in a repository, retrofit an existing project, install a new version of scientific-project-context (`spctx`) or bring a project up to date after one, refresh context that no longer matches the code or data, decide whether a topic needs its own document, or retire a stale document. Do not use for ordinary implementation, analysis changes, or writing public documentation.
 ---
 
 # Project Context
@@ -86,9 +86,11 @@ which environment it is installed in — the command is only reachable from
 that environment, and agents otherwise report it as unavailable and work
 around it. The `init` report names the interpreter it ran from; record the
 environment's name and that path relative to the repository or the home
-directory instead of guessing one. Leave out user names and version numbers:
-the file is shared across machines, and a version goes stale at the next
-upgrade.
+directory instead of guessing one. Record the command that upgrades `spctx`
+there too, with the source it was installed from; `pip freeze` or
+`uv pip freeze` in that environment shows the source.
+Leave out user names and version numbers: the file is shared across machines,
+and a version goes stale at the next upgrade.
 
 Keep transient counts, verification tallies, and internal vocabulary out of
 public documentation. Anything a collaborator reads should be readable by an
@@ -222,6 +224,13 @@ When a context source is no longer current or useful:
 
 Use this mode when a newly installed `spctx` may have changed the packaged
 files. The trigger is the new version, not a change in the repository.
+
+If you are also asked to install the new version, do that first, in the
+environment the instruction file names and with the upgrade command it records,
+then confirm with `spctx --version`. If no command is recorded, find the source
+the current version came from, as the setup step describes, or ask. Never
+install this package by name from a public package index: it is not published
+there, and whoever registers that name would be installed instead.
 
 1. If this skill's own body differs from the packaged one, restore it first,
    from the text `spctx init . --dry-run` prints, and follow the rest of this
