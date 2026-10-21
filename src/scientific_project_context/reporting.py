@@ -29,7 +29,8 @@ from .project import (
 )
 
 
-REPORT_SCHEMA_VERSION = 14
+REPORT_SCHEMA_VERSION = 15
+REPEATED_PASSAGES_SHOWN = 8
 HEALTH_VALIDATION_BOUNDARY = (
     "structure only; this does not check whether the science is right, whether the "
     "work reproduces elsewhere, or whether anything is ready to publish"
@@ -58,7 +59,7 @@ RELIED_ON_SUMMARY = {
 INITIALIZED_TOOL_COMMANDS = (
     (
         "spctx sync-index . --dry-run",
-        "Preview an update to the generated context index.",
+        "Preview the regenerated index of context documents.",
     ),
     ("spctx check .", "Check the context files for structural problems."),
 )
@@ -540,8 +541,12 @@ def _initialization_context_adoption(
         adoption["suggested_skills"] = retained_skill_files
     if agents_file is not None and agents_file.disposition == "defer":
         adoption["suggested_agents_file"] = agents_file.content.decode("utf-8")
-    elif effective_agent_state != "exact":
-        adoption["suggested_agents_block"] = CONTEXT_ROUTE_BLOCK
+    else:
+        if effective_agent_state != "exact":
+            adoption["suggested_agents_block"] = CONTEXT_ROUTE_BLOCK
+        # Retrofit and upgrade offer packaged sections from this text, not from the core.
+        if agents_file is not None and agents_file.disposition == "retain":
+            adoption["packaged_agents_file"] = agents_file.content.decode("utf-8")
     return adoption
 
 
@@ -667,7 +672,7 @@ def index_sync_report(
         result = applied.status
     elif dry_run:
         result = plan.status
-    elif plan.action in {"not_needed", "no_changes"}:
+    elif plan.action == "no_changes":
         result = plan.action
     else:
         raise ValueError("A non-preview successful report requires an applied result.")
@@ -701,7 +706,7 @@ def index_sync_report(
         ],
         "changed_files": changed_files,
         "conflicts": list(plan.conflicts),
-        "generation_boundary": "inventory_block_only",
+        "generation_boundary": "generated_index",
     }
     if dry_run and plan.planned_content is not None:
         report["original_sha256"] = plan.original_sha256
@@ -914,6 +919,16 @@ def render_human(report: Mapping[str, object]) -> str:
                 f"- Passages repeated among your own documents: {len(project_repeats)} "
                 "(word-for-word only; a reworded copy is not detected)"
             )
+            for passage in project_repeats[:REPEATED_PASSAGES_SHOWN]:
+                lines.extend(
+                    [
+                        f"  - {passage['path']} repeats {passage['other']}",
+                        f"    - {passage['words']} words: \"{passage['passage']}\"",
+                    ]
+                )
+            hidden = len(project_repeats) - REPEATED_PASSAGES_SHOWN
+            if hidden > 0:
+                lines.append(f"  - {hidden} more in `--json`")
 
         findings = report.get("findings")
         finding_values = findings if isinstance(findings, list) else []
@@ -964,14 +979,6 @@ def render_human(report: Mapping[str, object]) -> str:
                     ]
                 )
 
-            for passage in project_repeats:
-                lines.extend(
-                    [
-                        f"- {passage['path']} repeats {passage['other']}",
-                        f"  - {passage['words']} words: \"{passage['passage']}\"",
-                    ]
-                )
-
         message = report.get("message")
         if message:
             lines.append(f"- Error: {message}")
@@ -986,15 +993,15 @@ def render_human(report: Mapping[str, object]) -> str:
             lines.extend(
                 [
                     f"- Planned action: {report['action']}",
-                    f"- Focused context documents: {report['specialized_owner_count']}",
+                    f"- Context documents found: {report['specialized_owner_count']}",
                 ]
             )
             owners = report.get("specialized_owners")
             if isinstance(owners, list):
                 lines.extend(f"  - {owner}" for owner in owners)
             lines.append(
-                "- Only the generated inventory block is rewritten; "
-                "any routing notes you write around it stay as they are"
+                "- The index is generated: its heading is packaged text and its list "
+                "comes from the first lines of each document under `.context/`"
             )
             planned_content = report.get("planned_content")
             if planned_content is not None:
@@ -1083,6 +1090,13 @@ def render_human(report: Mapping[str, object]) -> str:
         if suggested_agents_file:
             lines.append("  - Packaged AGENTS.md for review:")
             lines.extend(f"    {line}" for line in str(suggested_agents_file).splitlines())
+        packaged_agents_file = adoption.get("packaged_agents_file")
+        if packaged_agents_file:
+            lines.append(
+                "  - Packaged AGENTS.md, to compare with yours outside the routing block "
+                "(yours is left unchanged):"
+            )
+            lines.extend(f"    {line}" for line in str(packaged_agents_file).splitlines())
         if suggested:
             lines.append("  - Routing block to add, with your review:")
             lines.extend(f"    {line}" for line in str(suggested).splitlines())

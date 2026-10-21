@@ -79,7 +79,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     sync_index = subparsers.add_parser(
         "sync-index",
-        help="Update the generated inventory in the context index.",
+        help="Regenerate the index of context documents in .context/index.md.",
     )
     sync_index.add_argument("target", help="Initialized project directory to inspect.")
     sync_index.add_argument("--dry-run", action="store_true", help="Plan without writing.")

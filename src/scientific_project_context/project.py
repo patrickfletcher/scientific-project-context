@@ -32,21 +32,21 @@ CONTEXT_ROUTE_END = "<!-- END SPCTX PROJECT CONTEXT ROUTING v1 -->"
 CONTEXT_ROUTE_BLOCK = "\n".join(
     (
         CONTEXT_ROUTE_BEGIN,
-        "Read `.context/project.md` at the start of work for the smallest current project context. If `.context/README.md` exists, use it to select only the additional source needed by the task.",
+        "Read `.context/project.md` at the start of work for the project's current state, and `.context/index.md` for the list of every other context document and when to read it. Open only what the task needs.",
         "",
-        "When work changes what the project currently knows, its current focus, a protected input, what later work relies on, or a context route, rewrite that part of the context in place before you finish. Run history, what stayed unchanged, and who approved what belong in Git and the conversation, not in context. Use `.agents/skills/spctx-project-context/SKILL.md` to initialize, refresh, separate, retire, or upgrade context.",
+        "When work changes what the project currently knows, its current focus, a protected input, or what later work relies on, rewrite that part of the context in place before you finish. Run history, what stayed unchanged, and who approved what belong in Git and the conversation, not in context. After adding, renaming, or removing a document under `.context/`, run `spctx sync-index .`; the index is generated, never edited by hand. Use `.agents/skills/spctx-project-context/SKILL.md` to initialize, refresh, separate, retire, or upgrade context.",
         "",
         "For work that could affect scientific meaning, protected inputs, methods, evidence, artifacts, validation, or claims, read `.context/scientific-practice.md` and use `.agents/skills/spctx-scientific-change/SKILL.md`.",
         "",
         "For text written for readers outside this work, such as a README, contributor guide, methods or results section, figure caption, status report, or manuscript, use `.agents/skills/spctx-public-writing/SKILL.md`.",
         "",
-        "Keep project facts in `.context/project.md` or a document it links. If another instruction conflicts with the scientific safeguards, stop and ask the user or the responsible scientist to resolve it.",
+        "Keep project facts in `.context/project.md` or another document under `.context/`. If another instruction conflicts with the scientific safeguards, stop and ask the user or the responsible scientist to resolve it.",
         CONTEXT_ROUTE_END,
     )
 )
 CONTEXT_INVENTORY_BEGIN = "<!-- BEGIN GENERATED CONTEXT INVENTORY -->"
 CONTEXT_INVENTORY_END = "<!-- END GENERATED CONTEXT INVENTORY -->"
-CONTEXT_EMPTY_INVENTORY_LINE = "*No focused context documents currently exist.*"
+CONTEXT_EMPTY_INVENTORY_LINE = "*No other context documents yet.*"
 DRAFT_CONTEXT_MARKER = "DRAFT CONTEXT - REVIEW REQUIRED"
 # Instruction locations common enough that silently adding a second one would surprise.
 KNOWN_INSTRUCTION_PATHS = (
@@ -58,8 +58,15 @@ KNOWN_INSTRUCTION_PATHS = (
     "GEMINI.md",
     "CONTRIBUTING.md",
 )
-# Managed starter files under `.context/`; never inventoried as focused sources.
-RESERVED_CONTEXT_FILENAMES = frozenset({"project.md", "readme.md", "scientific-practice.md"})
+# Starter files at the root of `.context/`, never listed in the index. A README there
+# would compete with `project.md` and `index.md` as a place to start, so it is never
+# listed either, and `check` reports it.
+RESERVED_CONTEXT_FILENAMES = frozenset(
+    {"index.md", "project.md", "readme.md", "scientific-practice.md"}
+)
+CONTEXT_README_PATH = ".context/README.md"
+# SHA-256 of index headings earlier packages shipped, which sync-index may replace.
+EARLIER_CONTEXT_INDEX_FRAMES: frozenset[str] = frozenset()
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 CONTEXT_GUIDANCE_LABELS = ("Purpose", "Read when", "Update when")
 CONTEXT_GUIDANCE_MAX_CHARS = 280
@@ -279,7 +286,7 @@ class IndexSyncPlan:
     def status(self) -> str:
         if self.conflicts or self.action == "blocked":
             return "blocked"
-        if self.action in {"not_needed", "no_changes"}:
+        if self.action == "no_changes":
             return self.action
         return "ready"
 
@@ -317,7 +324,7 @@ def _link_kind(path: Path) -> str | None:
 
 
 def discover_specialized_owners(target: str | os.PathLike[str]) -> OwnerDiscovery:
-    """Return focused context files without following linked managed paths."""
+    """Return every context document under `.context/`, without following links."""
 
     root = Path(target)
     # Keep string identity until after case-collision detection. ``WindowsPath``
@@ -330,35 +337,23 @@ def discover_specialized_owners(target: str | os.PathLike[str]) -> OwnerDiscover
         return OwnerDiscovery((), (f".context (context directory is a {design_link})",))
     if design_root.exists() and not design_root.is_dir():
         return OwnerDiscovery((), (".context (context path is not a directory)",))
-    if design_root.is_dir():
+    pending = [design_root] if design_root.is_dir() else []
+    while pending:
+        directory = pending.pop()
         try:
-            design_entries = tuple(design_root.iterdir())
+            entries = tuple(directory.iterdir())
         except OSError as exc:
-            return OwnerDiscovery((), (f".context (cannot inspect: {exc})",))
-        for path in design_entries:
-            if (
-                path.name.casefold().endswith(".md")
-                and path.name.casefold() not in RESERVED_CONTEXT_FILENAMES
-            ):
-                candidates.append(path.relative_to(root).as_posix())
-
-    active_root = design_root / "active"
-    active_link = _link_kind(active_root)
-    if active_link is not None:
-        conflicts.append(
-            f".context/active (focused-context directory is a {active_link})"
-        )
-    elif active_root.exists() and not active_root.is_dir():
-        conflicts.append(".context/active (focused-context path is not a directory)")
-    elif active_root.is_dir():
-        try:
-            active_entries = tuple(active_root.iterdir())
-        except OSError as exc:
-            conflicts.append(f".context/active (cannot inspect: {exc})")
-        else:
-            for path in active_entries:
-                if path.name.casefold().endswith(".md"):
-                    candidates.append(path.relative_to(root).as_posix())
+            conflicts.append(f"{directory.relative_to(root).as_posix()} (cannot inspect: {exc})")
+            continue
+        for path in entries:
+            relative_text = path.relative_to(root).as_posix()
+            link_kind = _link_kind(path)
+            if link_kind is not None:
+                conflicts.append(f"{relative_text} (context path is a {link_kind})")
+            elif path.is_dir():
+                pending.append(path)
+            elif is_discoverable_owner_path(relative_text):
+                candidates.append(relative_text)
 
     owners: list[str] = []
     seen_casefolded: dict[str, str] = {}
@@ -373,18 +368,30 @@ def discover_specialized_owners(target: str | os.PathLike[str]) -> OwnerDiscover
             continue
         seen_casefolded[folded] = relative_text
         path = root / Path(relative_text)
-        link_kind = _link_kind(path)
-        if link_kind is not None:
-            conflicts.append(f"{relative_text} (focused context is a {link_kind})")
-        elif path.exists() and not path.is_file():
-            conflicts.append(f"{relative_text} (focused context is not a regular file)")
+        if path.exists() and not path.is_file():
+            conflicts.append(f"{relative_text} (context document is not a regular file)")
         elif path.is_file():
             owners.append(relative_text)
-    return OwnerDiscovery(tuple(owners), tuple(conflicts))
+    return OwnerDiscovery(tuple(owners), tuple(sorted(conflicts)))
 
 
 def extract_context_guidance(text: str, path: str) -> ContextGuidance:
     """Extract bounded routing fields without interpreting document meaning."""
+
+    normalized = {
+        label: value if value and len(value) <= CONTEXT_GUIDANCE_MAX_CHARS else None
+        for label, value in read_context_guidance_lines(text).items()
+    }
+    return ContextGuidance(
+        path=path,
+        purpose=normalized["Purpose"],
+        read_when=normalized["Read when"],
+        update_when=normalized["Update when"],
+    )
+
+
+def read_context_guidance_lines(text: str) -> dict[str, str | None]:
+    """Return each routing line as written, or None when it is absent or repeated."""
 
     values: dict[str, list[str] | None] = {}
     active: str | None = None
@@ -415,19 +422,9 @@ def extract_context_guidance(text: str, path: str) -> ContextGuidance:
     normalized: dict[str, str | None] = {}
     for label in CONTEXT_GUIDANCE_LABELS:
         parts = values.get(label)
-        if not parts:
-            normalized[label] = None
-            continue
-        value = " ".join(" ".join(parts).split())
-        normalized[label] = (
-            value if 0 < len(value) <= CONTEXT_GUIDANCE_MAX_CHARS else None
-        )
-    return ContextGuidance(
-        path=path,
-        purpose=normalized["Purpose"],
-        read_when=normalized["Read when"],
-        update_when=normalized["Update when"],
-    )
+        value = " ".join(" ".join(parts).split()) if parts else ""
+        normalized[label] = value or None
+    return normalized
 
 
 def _is_relative_to(path: Path, parent: Path) -> bool:
@@ -673,9 +670,16 @@ def plan_initialization(
     _validate_target_mode(canonical_target, mode)
     files: list[InitializationFile] = []
     conflicts: list[str] = []
+    index_content = _initial_context_index(catalog, canonical_target)
 
     for entry in catalog.starter_entries:
         relative_text = entry.relative_path
+        if relative_text == CONTEXT_INDEX_PATH:
+            entry = replace(
+                entry,
+                content=index_content,
+                sha256=hashlib.sha256(index_content).hexdigest(),
+            )
         destination = _destination(canonical_target, relative_text)
         obstruction = _first_structural_obstruction(destination, canonical_target)
 
@@ -814,6 +818,20 @@ def plan_initialization(
         existing_instructions=_existing_instructions(canonical_target),
         claude_bridge=claude,
     )
+
+
+def _initial_context_index(catalog: ResourceCatalog, target: Path) -> bytes:
+    """Build the index `init` writes, listing whatever context documents already exist."""
+
+    packaged = catalog.get(CONTEXT_INDEX_RESOURCE_ID).content
+    discovery = discover_specialized_owners(target)
+    if discovery.conflicts:
+        return packaged
+    try:
+        guidance = collect_context_guidance(target, discovery.owners)
+    except OperationError:
+        guidance = ()
+    return planned_context_index(None, packaged, discovery.owners, guidance)
 
 
 def _existing_instructions(root: Path) -> tuple[str, ...]:
@@ -1234,19 +1252,72 @@ def rewrite_context_inventory(
     if owners:
         inventory: list[str] = []
         for path in owners:
-            inventory.append(f"- `{path}`{newline}")
+            # Links are relative to the index, so any Markdown viewer can follow them.
+            target = PurePosixPath(path).relative_to(".context").as_posix()
+            inventory.append(f"- [{target}]({target}){newline}")
             item = guidance_by_path.get(path)
-            if item is not None and item.complete:
+            # The index is for finding documents; each keeps its own Update when line.
+            if item is not None and item.purpose and item.read_when:
                 inventory.extend(
                     (
                         f"  - Purpose: {item.purpose}{newline}",
                         f"  - Read when: {item.read_when}{newline}",
-                        f"  - Update when: {item.update_when}{newline}",
                     )
                 )
     else:
         inventory = [f"{CONTEXT_EMPTY_INVENTORY_LINE}{newline}"]
     return "".join(lines[: begin + 1] + inventory + lines[end:]).encode("utf-8")
+
+
+def context_index_frame(content: bytes | str) -> str | None:
+    """Return the index text around the generated list, or None without one valid list."""
+
+    try:
+        text = content.decode("utf-8") if isinstance(content, bytes) else content
+    except UnicodeError:
+        return None
+    lines = text.replace("\r\n", "\n").split("\n")
+    begins = [index for index, line in enumerate(lines) if line == CONTEXT_INVENTORY_BEGIN]
+    ends = [index for index, line in enumerate(lines) if line == CONTEXT_INVENTORY_END]
+    if len(begins) != 1 or len(ends) != 1 or begins[0] >= ends[0]:
+        return None
+    return "\n".join(lines[: begins[0] + 1] + lines[ends[0] :])
+
+
+def context_index_frame_state(content: bytes, packaged: bytes) -> str:
+    """Classify an index as `current`, `earlier` packaged text, `own` text, or `invalid`."""
+
+    frame = context_index_frame(content)
+    if frame is None:
+        return "invalid"
+    if frame == context_index_frame(packaged):
+        return "current"
+    if hashlib.sha256(frame.encode("utf-8")).hexdigest() in EARLIER_CONTEXT_INDEX_FRAMES:
+        return "earlier"
+    return "own"
+
+
+def planned_context_index(
+    original: bytes | None,
+    packaged: bytes,
+    owners: Sequence[str],
+    guidance: Sequence[ContextGuidance] = (),
+) -> bytes:
+    """Return the index a sync writes, refusing to discard text the project added."""
+
+    if original is None:
+        return rewrite_context_inventory(packaged, owners, guidance)
+    state = context_index_frame_state(original, packaged)
+    if state == "current":
+        return rewrite_context_inventory(original, owners, guidance)
+    if state == "earlier":
+        base = packaged.replace(b"\n", b"\r\n") if b"\r\n" in original else packaged
+        return rewrite_context_inventory(base, owners, guidance)
+    raise OperationError(
+        "holds text besides the packaged heading and the generated list. The index is "
+        "generated, so move anything still needed to `.context/project.md` or another "
+        "context document, delete the file, and run `spctx sync-index .` again"
+    )
 
 
 def collect_context_guidance(
@@ -1256,12 +1327,12 @@ def collect_context_guidance(
     items: list[ContextGuidance] = []
     for owner in owners:
         path = _destination(target, owner)
-        content, _ = _regular_file_observation(path, label="Focused context document")
+        content, _ = _regular_file_observation(path, label="Context document")
         try:
             text = content.decode("utf-8")
         except UnicodeError as exc:
             raise OperationError(
-                f"Focused context document must be valid UTF-8: {owner}"
+                f"Context document must be valid UTF-8: {owner}"
             ) from exc
         items.append(extract_context_guidance(text, owner))
     return tuple(items)
@@ -1400,7 +1471,9 @@ def plan_index_sync(
             label="Context index",
         )
         try:
-            planned = rewrite_context_inventory(original, owners, owner_guidance)
+            planned = planned_context_index(
+                original, entry.content, owners, owner_guidance
+            )
         except (OperationError, UnicodeError) as exc:
             return _index_plan(
                 target=canonical_target,
@@ -1426,17 +1499,7 @@ def plan_index_sync(
             planned_content=planned,
         )
 
-    if len(owners) < 2:
-        return _index_plan(
-            target=canonical_target,
-            catalog=catalog,
-            entry=entry,
-            owners=owners,
-            owner_guidance=owner_guidance,
-            action="not_needed",
-        )
-
-    planned = rewrite_context_inventory(entry.content, owners, owner_guidance)
+    planned = planned_context_index(None, entry.content, owners, owner_guidance)
     conflicts: list[str] = []
     obstruction = _first_structural_obstruction(destination, canonical_target)
     if obstruction is not None:
@@ -1458,18 +1521,27 @@ def plan_index_sync(
 
 
 def is_discoverable_owner_path(relative_path: str) -> bool:
-    """Return whether one POSIX path may be inventoried as a focused source.
+    """Return whether one POSIX path is a context document the index lists.
 
     Discovery and apply-time validation must share this rule; when they drifted,
     a custom `.context/<name>.md` planned cleanly and then failed on apply.
     """
 
-    pure = PurePosixPath(relative_path)
-    if pure.is_absolute() or ".." in pure.parts or pure.suffix.casefold() != ".md":
+    if "\\" in relative_path:
         return False
-    if len(pure.parts) == 2 and pure.parts[0] == ".context":
+    pure = PurePosixPath(relative_path)
+    if (
+        pure.is_absolute()
+        or pure.as_posix() != relative_path
+        or any(part in {"", ".", ".."} for part in pure.parts)
+        or pure.suffix.casefold() != ".md"
+        or len(pure.parts) < 2
+        or pure.parts[0] != ".context"
+    ):
+        return False
+    if len(pure.parts) == 2:
         return pure.name.casefold() not in RESERVED_CONTEXT_FILENAMES
-    return len(pure.parts) == 3 and pure.parts[:2] == (".context", "active")
+    return True
 
 
 def _validate_owner_tuple(owners: tuple[str, ...]) -> None:
@@ -1566,7 +1638,7 @@ def _validate_index_sync_plan(plan: IndexSyncPlan) -> None:
     ):
         raise OperationError("Context-index original filesystem identity is invalid.")
 
-    allowed_actions = {"blocked", "create", "update", "no_changes", "not_needed"}
+    allowed_actions = {"blocked", "create", "update", "no_changes"}
     if plan.action not in allowed_actions:
         raise OperationError(f"Context-index plan has an unknown action: {plan.action}")
     if plan.action == "blocked":
@@ -1576,32 +1648,22 @@ def _validate_index_sync_plan(plan: IndexSyncPlan) -> None:
     if plan.conflicts:
         raise OperationError("Unblocked context-index plan unexpectedly has conflicts.")
 
-    if plan.action == "not_needed":
-        if (
-            len(plan.specialized_owners) >= 2
-            or plan.original_content is not None
-            or plan.planned_content is not None
-        ):
-            raise OperationError("Context-index not-needed plan relationships are invalid.")
-        return
     if plan.action == "create":
-        expected = rewrite_context_inventory(
+        expected = planned_context_index(
+            None,
             plan.source_content,
             plan.specialized_owners,
             plan.owner_guidance,
         )
-        if (
-            len(plan.specialized_owners) < 2
-            or plan.original_content is not None
-            or plan.planned_content != expected
-        ):
+        if plan.original_content is not None or plan.planned_content != expected:
             raise OperationError("Context-index create plan relationships are invalid.")
         return
 
     if plan.original_content is None or plan.planned_content is None:
         raise OperationError("Context-index update observation is incomplete.")
-    expected = rewrite_context_inventory(
+    expected = planned_context_index(
         plan.original_content,
+        plan.source_content,
         plan.specialized_owners,
         plan.owner_guidance,
     )
@@ -1617,21 +1679,21 @@ def _revalidate_index_sync_plan(plan: IndexSyncPlan) -> None:
     discovery = discover_specialized_owners(plan.target)
     if discovery.conflicts or discovery.owners != plan.specialized_owners:
         raise OperationError(
-            "Focused context owners changed after preflight; rerun context-index sync."
+            "Context documents changed after preflight; rerun context-index sync."
         )
     try:
         current_guidance = collect_context_guidance(plan.target, discovery.owners)
     except OperationError as exc:
         raise OperationError(
-            "Focused context guidance changed after preflight; rerun context-index sync."
+            "Context document guidance changed after preflight; rerun context-index sync."
         ) from exc
     if current_guidance != plan.owner_guidance:
         raise OperationError(
-            "Focused context guidance changed after preflight; rerun context-index sync."
+            "Context document guidance changed after preflight; rerun context-index sync."
         )
 
     destination = plan.destination
-    if plan.action in {"create", "not_needed"}:
+    if plan.action == "create":
         obstruction = _first_structural_obstruction(destination, plan.target)
         if obstruction is not None:
             raise OperationError("Context-index target structure changed after preflight.")
@@ -1714,14 +1776,14 @@ def _replace_file_if_unchanged(
 
 
 def apply_index_sync(plan: IndexSyncPlan) -> IndexSyncResult:
-    """Apply a safe index plan while changing only the generated inventory block."""
+    """Apply a safe index plan, writing only the generated index."""
 
     _validate_index_sync_plan(plan)
     if plan.conflicts or plan.action == "blocked":
         raise OperationError("Context-index operation is blocked; no file was changed.")
     _revalidate_index_sync_plan(plan)
 
-    if plan.action in {"not_needed", "no_changes"}:
+    if plan.action == "no_changes":
         return IndexSyncResult(
             target=plan.target,
             status=plan.action,

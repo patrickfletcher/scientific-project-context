@@ -51,11 +51,13 @@ def sorted_owners(*paths: str) -> tuple[str, ...]:
 class OwnerPathRuleTests(unittest.TestCase):
     """Discovery and apply-time validation must accept exactly the same paths."""
 
-    def test_custom_root_level_context_documents_are_discoverable(self) -> None:
+    def test_context_documents_in_any_folder_are_discoverable(self) -> None:
         for relative_path in (
             ".context/curation.md",
             ".context/spectral-analysis.md",
             ".context/active/method.md",
+            ".context/methods/deep/nested.md",
+            ".context/methods/README.md",
             *EXAMPLE_OWNER_PATHS,
         ):
             with self.subTest(relative_path=relative_path):
@@ -64,10 +66,12 @@ class OwnerPathRuleTests(unittest.TestCase):
     def test_managed_and_unsafe_paths_are_rejected(self) -> None:
         for relative_path in (
             ".context/project.md",
+            ".context/index.md",
             ".context/README.md",
             ".context/scientific-practice.md",
             ".context/notes.txt",
-            ".context/active/deep/nested.md",
+            ".context/methods/../escape.md",
+            ".context\\methods\\owner.md",
             "../escape.md",
             "docs/elsewhere.md",
         ):
@@ -127,7 +131,7 @@ class IndexSyncTests(unittest.TestCase):
         self.assertEqual(__version__, producer["version"])
         self.assertEqual(self.catalog.bundle_sha256, producer["resource_bundle_sha256"])
 
-    def test_absent_index_threshold_for_zero_one_and_two_owners(self) -> None:
+    def test_an_absent_index_is_created_for_any_number_of_documents(self) -> None:
         paths = tuple(EXAMPLE_OWNER_PATHS[:2])
         resource = self.catalog.get(CONTEXT_INDEX_RESOURCE_ID)
 
@@ -144,18 +148,12 @@ class IndexSyncTests(unittest.TestCase):
 
                 self.assertIsInstance(plan, IndexSyncPlan)
                 self.assertEqual(expected, plan.specialized_owners)
-                self.assertEqual(
-                    "not_needed" if len(expected) < 2 else "create",
-                    plan.action,
-                )
+                self.assertEqual("create", plan.action)
                 self.assertFalse(plan.conflicts)
-                if len(expected) < 2:
-                    self.assertIsNone(plan.planned_content)
-                else:
-                    self.assertEqual(
-                        rewrite_context_inventory(resource.content, expected),
-                        plan.planned_content,
-                    )
+                self.assertEqual(
+                    rewrite_context_inventory(resource.content, expected),
+                    plan.planned_content,
+                )
                 self.assertFalse((target / CONTEXT_INDEX_PATH).exists())
 
     def test_custom_owner_drives_create_and_dry_run_does_not_write(self) -> None:
@@ -175,7 +173,7 @@ class IndexSyncTests(unittest.TestCase):
         self.assertTrue(payload["dry_run"])
         self.assertEqual(list(expected), payload["specialized_owners"])
         self.assertEqual(len(expected), payload["specialized_owner_count"])
-        self.assertEqual("inventory_block_only", payload["generation_boundary"])
+        self.assertEqual("generated_index", payload["generation_boundary"])
         self.assertFalse(self.index.exists())
         self.assert_common_identity(payload)
 
@@ -291,34 +289,46 @@ class IndexSyncTests(unittest.TestCase):
         self.assertEqual("created", result.status)
         self.assertEqual(expected, self.index.read_bytes())
 
-    def test_update_preserves_exact_human_bytes_and_crlf_style(self) -> None:
+    def test_update_keeps_crlf_style_of_the_packaged_heading(self) -> None:
         owner = ".context/roadmap.md"
         self.add_owner(owner)
-        prefix = b"# Custom Context Index\r\n\r\nHuman prefix.\r\n"
-        suffix = b"\r\nHuman suffix.\r\n"
-        original = (
-            prefix
-            + CONTEXT_INVENTORY_BEGIN.encode("utf-8")
-            + b"\r\n- `stale.md`\r\n"
-            + CONTEXT_INVENTORY_END.encode("utf-8")
-            + suffix
-        )
+        packaged = self.catalog.get(CONTEXT_INDEX_RESOURCE_ID).content.replace(b"\n", b"\r\n")
+        original = rewrite_context_inventory(packaged, (".context/stale.md",))
+        self.index.parent.mkdir(parents=True, exist_ok=True)
         self.index.write_bytes(original)
 
         plan = plan_index_sync(self.catalog, self.target)
-        expected = (
-            prefix
-            + CONTEXT_INVENTORY_BEGIN.encode("utf-8")
-            + f"\r\n- `{owner}`\r\n".encode("utf-8")
-            + CONTEXT_INVENTORY_END.encode("utf-8")
-            + suffix
-        )
+        expected = rewrite_context_inventory(packaged, (owner,))
 
         self.assertEqual("update", plan.action)
         self.assertEqual(expected, plan.planned_content)
+        self.assertNotIn(b"\n", expected.replace(b"\r\n", b""))
         result = apply_index_sync(plan)
         self.assertEqual("updated", result.status)
         self.assertEqual(expected, self.index.read_bytes())
+
+    def test_an_index_holding_text_of_its_own_is_never_overwritten(self) -> None:
+        """The index is generated, but deleting what someone wrote there is not the tool's call."""
+
+        owner = ".context/roadmap.md"
+        self.add_owner(owner)
+        packaged = self.catalog.get(CONTEXT_INDEX_RESOURCE_ID).content
+        original = packaged + b"\n- [Roadmap](roadmap.md): a second, hand-kept list.\n"
+        self.index.parent.mkdir(parents=True, exist_ok=True)
+        self.index.write_bytes(original)
+
+        plan = plan_index_sync(self.catalog, self.target)
+
+        self.assertEqual("blocked", plan.action)
+        self.assertIn("move anything still needed", plan.conflicts[0])
+        with self.assertRaises(OperationError):
+            apply_index_sync(plan)
+        self.assertEqual(original, self.index.read_bytes())
+
+        self.index.unlink()
+        recreated = plan_index_sync(self.catalog, self.target)
+        self.assertEqual("create", recreated.action)
+        self.assertEqual(rewrite_context_inventory(packaged, (owner,)), recreated.planned_content)
 
     def test_existing_index_is_retained_through_contraction_and_is_idempotent(self) -> None:
         first = EXAMPLE_OWNER_PATHS[0]
@@ -333,7 +343,8 @@ class IndexSyncTests(unittest.TestCase):
         self.assertEqual((first,), one_owner_plan.specialized_owners)
         self.assertEqual("updated", apply_index_sync(one_owner_plan).status)
         self.assertTrue(self.index.is_file())
-        self.assertIn(f"- `{first}`\n".encode(), self.index.read_bytes())
+        target = first.removeprefix(".context/")
+        self.assertIn(f"- [{target}]({target})\n".encode(), self.index.read_bytes())
 
         first_path.unlink()
         zero_owner_plan = plan_index_sync(self.catalog, self.target)
@@ -630,15 +641,37 @@ class IndexSyncTests(unittest.TestCase):
         self.assertEqual(stable, self.index.read_bytes())
         self.assert_common_identity(no_change)
 
-    def test_cli_not_needed_blocked_and_error_exit_contracts_are_no_write(self) -> None:
+    def test_documents_in_every_folder_are_listed(self) -> None:
+        """A subfolder of documents was once left out of the index without notice."""
+
+        for relative_path in (*EXAMPLE_OWNER_PATHS[:2], ".context/methods/calibration.md"):
+            self.add_owner(relative_path)
+        self.add_owner(".context/archived/old-plan.md")
+        self.add_owner(".context/notes/deep/inner.md")
+        (self.target / ".context/notes/figure.png").write_bytes(b"not markdown")
+
+        _, payload = self.run_json(["sync-index", str(self.target), "--dry-run"])
+
+        self.assertEqual(
+            [
+                ".context/active/method-validation.md",
+                ".context/archived/old-plan.md",
+                ".context/decision-register.md",
+                ".context/methods/calibration.md",
+                ".context/notes/deep/inner.md",
+            ],
+            payload["specialized_owners"],
+        )
+
+    def test_cli_created_blocked_and_error_exit_contracts(self) -> None:
         self.add_owner(EXAMPLE_OWNER_PATHS[0])
-        not_needed_exit, not_needed = self.run_json(
+        created_exit, created = self.run_json(
             ["sync-index", str(self.target)]
         )
-        self.assertEqual(0, not_needed_exit)
-        self.assertEqual("not_needed", not_needed["result"])
-        self.assertFalse(self.index.exists())
-        self.assert_common_identity(not_needed)
+        self.assertEqual(0, created_exit)
+        self.assertEqual("created", created["result"])
+        self.assertTrue(self.index.exists())
+        self.assert_common_identity(created)
 
         blocked_content = b"# Unmarked project index\n"
         self.index.write_bytes(blocked_content)

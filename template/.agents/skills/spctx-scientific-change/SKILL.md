@@ -14,7 +14,7 @@ and stop applying this procedure rather than performing it as ceremony.
 
 ## 1. State the Scientific Question and Risk
 
-Read `.context/scientific-practice.md`, `.context/project.md`, and only relevant focused sources selected through `.context/README.md` when it exists. Read `AGENTS.md` for project rules and routing, but do not expect it to duplicate the scientific contract.
+Read `.context/scientific-practice.md`, `.context/project.md`, and only the other context documents the index in `.context/index.md` shows are relevant. Read `AGENTS.md` for project rules and routing, but do not expect it to duplicate the scientific contract.
 
 State only what is relevant:
 
@@ -99,7 +99,7 @@ Identify which prior evidence and downstream outputs must be rerun. If they are 
 
 ## 4. Choose the Smallest Home
 
-Keep one behavior, check, and evidence record in `.context/project.md` while it remains readable. Use another source only under the three conditions in `project-context`: the detail persists across sessions, updates independently, and no longer fits clearly.
+Keep one behavior, check, and evidence record in `.context/project.md` while it remains readable. Use another source only under the three conditions in `spctx-project-context`: the detail persists across sessions, updates independently, and no longer fits clearly. Run `spctx sync-index .` after adding one.
 
 Several validation states may justify a validation table; non-obvious artifact provenance and rerun rules may justify an artifact specification; recurring scientific assumptions may justify a compact scientific guide. These are examples, not required filenames. Reuse an existing test plan, data dictionary, benchmark record, method note, or public specification when it already holds the fact.
 
@@ -107,7 +107,7 @@ Several validation states may justify a validation table; non-obvious artifact p
 
 Establish the check and expected signal before or alongside the broader work when practical. Perform the affected analysis, acquisition, calculation, or test and record the actual result, uncertainty, and limits. Check existence alone is not validation.
 
-When reproduction fails, preserve discrepant results, identify the changed dependency, and mark affected evidence or output stale. Perform a known correction, record a consequential choice for review, or ask for missing scientific judgment as appropriate.
+When a result something depends on fails to reproduce, keep the discrepant result, find what changed, and mark the affected evidence or outputs stale. That is a judgment for the moment it happens, not a guard to build into code. Perform a known correction, record a consequential choice for review, or ask for missing scientific judgment as appropriate.
 
 ## 6. Report the Boundary
 

@@ -4,7 +4,7 @@ Purpose: compact, current context for safe work by human and agent contributors.
 Read when: starting work, checking project intent or current reality, or deciding whether more documentation is justified.
 Update when: the purpose, a current answer, the focus, protected material, what later work relies on, or sharing intent changes; rewrite the affected part in place.
 
-Keep this file to about one screen, and describe what is known now rather than how the project got here; Git keeps the history. Agents imitate this file, so write it the way you want the project's other documents written. This is not a form that must be completed: delete prompts that do not apply, and use explicit unknowns instead of invented facts. A person or agent may draft it from available evidence; the responsible scientist reviews scientific meaning, and the project or data owner reviews intent and permissions. Add a focused source only when recurring detail persists, updates independently, and materially harms this file's scanability.
+Keep this file to about one screen, and describe what is known now rather than how the project got here; Git keeps the history. Agents imitate this file, so write it the way you want the project's other documents written. This is not a form that must be completed: delete prompts that do not apply, and use explicit unknowns instead of invented facts. A person or agent may draft it from available evidence; the responsible scientist reviews scientific meaning, and whoever is responsible for the project or data reviews intent and permissions. Add a focused source only when recurring detail persists, updates independently, and materially harms this file's scanability. `.context/index.md` lists every context document, so keep no list of them here; link one only where a statement points to its detail.
 
 This file holds scientific purpose, current state, findings, risks, and open decisions. `AGENTS.md` holds environment, commands, and conventions; `README.md` holds human setup and command documentation. Link to them rather than repeating them here.
 
@@ -32,7 +32,7 @@ This file holds scientific purpose, current state, findings, risks, and open dec
 
 ## Scientific Work, Evidence, and Outputs
 
-**What must not be changed silently**: [protected data, models, calibration, curated decisions, reference cases, or `none identified yet`]
+**Protected inputs**: [the data, reference material, calibrations, or curated decisions the work takes as given, and why each is fixed; or `none identified yet`]
 
 **What could make the result wrong even if the workflow completes or looks plausible**: [the main failure modes]
 
@@ -49,7 +49,7 @@ so; no tool can make that call for you.
 
 ## Unresolved Questions
 
-[only questions that must persist across sessions; ask blocking questions directly instead of parking them here]
+[only questions that must persist across sessions; ask blocking questions directly instead of parking them here. Keep proposals awaiting a decision here or in one page this links, so adopted text can state what was adopted without hedging]
 
 ## Sharing and Reuse
 

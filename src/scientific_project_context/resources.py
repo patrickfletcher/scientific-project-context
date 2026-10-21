@@ -22,6 +22,9 @@ except ImportError:  # Python 3.10
 
 RESOURCE_PACKAGE = "_scientific_project_context_resources"
 
+# The context index, which `init` writes and `sync-index` regenerates.
+CONTEXT_INDEX_PATH = ".context/index.md"
+
 # The files `init` places into a project.
 STARTER_INVENTORY = tuple(
     sorted(
@@ -30,17 +33,14 @@ STARTER_INVENTORY = tuple(
             ".agents/skills/spctx-project-context/SKILL.md",
             ".agents/skills/spctx-public-writing/SKILL.md",
             ".agents/skills/spctx-scientific-change/SKILL.md",
+            CONTEXT_INDEX_PATH,
             ".context/project.md",
             ".context/scientific-practice.md",
         )
     )
 )
 
-# The context index is packaged but written only by `sync-index`, once a project
-# has enough focused documents for a router to be worth having.
-CONTEXT_INDEX_PATH = ".context/README.md"
-
-TEMPLATE_INVENTORY = tuple(sorted((*STARTER_INVENTORY, CONTEXT_INDEX_PATH)))
+TEMPLATE_INVENTORY = STARTER_INVENTORY
 
 TEMPLATE_RESOURCE_IDS = tuple(f"template/{path}" for path in TEMPLATE_INVENTORY)
 CONTEXT_INDEX_RESOURCE_ID = f"template/{CONTEXT_INDEX_PATH}"

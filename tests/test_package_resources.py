@@ -32,7 +32,8 @@ class ResourceCatalogTests(unittest.TestCase):
             resources.STARTER_INVENTORY,
             tuple(entry.relative_path for entry in catalog.starter_entries),
         )
-        self.assertNotIn(
+        # The index is a starter file: `init` writes it so it is always the one list.
+        self.assertIn(
             resources.CONTEXT_INDEX_PATH,
             tuple(entry.relative_path for entry in catalog.starter_entries),
         )

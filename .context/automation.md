@@ -23,9 +23,9 @@ publication readiness.
 
 | Command | Role | Boundary |
 | --- | --- | --- |
-| `spctx init` | Infer new/retrofit mode, install the exact six-file starter including three canonical Agent Skills, optionally add `.claude/skills/` pointer skills with `--claude`, retain occupied regular files, and report the activation and semantic handoff. | Never overwrites or merges project instructions or occupied skills and never initializes scientific meaning; unsafe structure blocks. |
+| `spctx init` | Infer new/retrofit mode, install the exact seven-file starter including three canonical Agent Skills and an index listing any context documents already present, optionally add `.claude/skills/` pointer skills with `--claude`, retain occupied regular files, and report the activation and semantic handoff. | Never overwrites or merges project instructions or occupied skills and never initializes scientific meaning; unsafe structure blocks. |
 | `spctx check` | Report starter integrity, scientific-practice core integrity, Agent Skill structure, pointer-skill agreement, context-index integrity, review markers, and compact routing guidance. | Read-only; does not judge project meaning, prose adequacy, or repository organization. |
-| `spctx sync-index` | Create or synchronize only the marked generated inventory for discoverable current context, including bounded self-routing summaries. | Derives summaries only from current regular UTF-8 files and does not write routing prose, project meaning, or scientific claims. |
+| `spctx sync-index` | Regenerate `.context/index.md`: the packaged heading, then a link to every Markdown file under `.context/` with the `Purpose` and `Read when` lines from its top. | Derives entries only from current regular UTF-8 files; never discards text a project added to the index, and stops with instructions instead. |
 
 `tools/check_package_artifacts.py` is the only repository-only product tool. It
 checks built wheel/sdist membership, metadata, resource identity, and direct
@@ -59,19 +59,36 @@ body is ever duplicated, and `DH-SKILL-004` reports a pointer whose description
 or route no longer agrees with its skill. Apart from this bounded pointer, no
 alternate skill root or second procedure location is generated or managed.
 
-Index synchronization changes only the exact generated inventory block. It
-preserves human-authored bytes and line endings, blocks malformed or ambiguous
-markers and unsafe paths, and revalidates observed paths and routing summaries
-before replacement. Discovery and apply-time revalidation share one predicate,
-`is_discoverable_owner_path`, which accepts any
-Markdown file directly under `.context/` other than the managed starter files,
-and any Markdown file in `.context/active/`. Keeping one rule is deliberate:
-when these were written twice they drifted, and every custom root-level context
-document planned cleanly and then failed on apply. A complete entry contains the
-source path and normalized, 280-character-bounded `Purpose`, `Read when`, and
-`Update when` values from the first 20 lines. Incomplete guidance yields the
-existing `DH-GUIDE-001` warning and a path-only entry. Dry-run reports include
-the exact planned UTF-8 content and digest.
+`.context/index.md` is generated, not project-owned. `init` writes it like any
+starter file, with the documents already present listed, and `sync-index`
+regenerates it. Discovery and apply-time revalidation share one predicate,
+`is_discoverable_owner_path`, which accepts every Markdown file under
+`.context/`, in any folder, other than `index.md`, `project.md`,
+`scientific-practice.md`, and `README.md` at its root.
+Keeping one rule is deliberate: when these were written twice they drifted, and
+every custom root-level context document planned cleanly and then failed on
+apply. Any link under `.context/` blocks, rather than leaving a folder
+silently unlisted. An entry is a relative Markdown link whose text is its
+target and, when both are present, the
+normalized, 280-character-bounded `Purpose` and `Read when` values from the
+first 20 lines. Missing guidance yields `DH-GUIDE-001` and a link-only entry; a
+line over the limit is reported as too long, with its length, rather than as
+missing.
+
+A `README.md` at the root of `.context/` is never listed: it would compete with
+`project.md` as the place to start and with the index as the list.
+`DH-ROUTE-007` reports it, and moving what is still needed and deleting it stays
+with the project. This is also the whole upgrade path from the earlier index
+name, so neither the skills nor the report carry that history.
+
+The text around the generated list must be the packaged heading. When it is a
+heading an earlier package shipped, recognized by a fixed digest, `sync-index`
+replaces it and keeps the file's line endings; no earlier heading is recorded
+yet, and the set exists for the next heading change. When it holds anything else,
+`sync-index` stops: the text may be a project's own, and deleting it is not a
+tool's call. `check` reports the same state as `DH-ROUTE-006`, and `check
+--diff` shows the difference. Dry-run reports include the exact planned UTF-8
+content and digest.
 
 ## Routing Block Version
 
@@ -83,6 +100,8 @@ the marker would make every existing project's route read as absent and invite
 duplicate blocks, which is a real migration cost for no behavioral gain.
 
 dev23 rewrote the block's update rule after T2 and kept v1 for the same reason.
+dev24 did the same when the block began sending agents to the index at the
+start of work and naming `spctx sync-index`.
 An adopting project's older block reads as modified, which `check --diff` shows
 and the `upgrade` mode replaces; its practice core reads the same way until
 restored.
@@ -100,8 +119,12 @@ review changes it never made. Its kind stays `broken` while the report fields
 are held still for the trials.
 
 The context-adoption block appears only in the `init` report, where activation
-is the subject. Human `check` output carries the state lines, observations, and
-the validation boundary; resource and skill digests stay in `--json`.
+is the subject. When `init` keeps an `AGENTS.md` that differs from the packaged
+one, the block carries the packaged file as `packaged_agents_file`, so retrofit
+and upgrade can offer its sections in the packaged wording. Human `check` output
+carries the state lines, observations, each repeated pair among the project's
+own documents, and the validation boundary; resource and skill digests stay in
+`--json`.
 Arbitrary context-document YAML is outside this interface. No current harness
 source establishes frontmatter on ordinary project Markdown as a portable
 knowledge-graph contract, so adding it would create a second metadata surface
@@ -112,7 +135,8 @@ compare-and-swap boundary across the final filesystem call.
 Health checks do not follow linked targets or treat prose heuristics as proof of
 semantic adequacy. They verify only the required starter structure, exact
 scientific-core and project-context routing blocks, Agent Skill structure,
-pointer-skill agreement, bounded index integrity, review markers, compact
+pointer-skill agreement, an index that lists exactly the documents present and
+holds nothing else, review markers, compact
 routing guidance, and context that names a repository path which is not there.
 They do not score prose, repository size, document counts, decision lifecycle,
 or alternate platform instruction and skill paths. File placement, persistent
@@ -128,7 +152,11 @@ because a reference into a tree the project does not have is describing a
 possibility rather than pointing at something. The generated index is exempt;
 its routes are conditional by design and its inventory is already checked. A
 first pass without those two rules produced three findings on this repository
-and its fixtures, all false, which is why both exist.
+and its fixtures, all false, which is why both exist. A path the project's
+`.gitignore` files exclude is skipped as well, because it may exist only where
+the analysis runs; T2 bent prose to clear exactly that false finding. The rules
+are read without running Git, from `.gitignore` files inside the project only,
+without following links; per-clone and global excludes are not read.
 
 The report gained `practice_localization`, observing whether the project wrote
 its own practice notes outside the managed core. Diffing the file against the
@@ -174,7 +202,7 @@ structure as approval, and the aggregate hid the individual signals that are
 actually actionable. Tuning trigger phrasings, in particular, is the outcome the
 system wants and was previously reported as divergence from the packaged text.
 
-The report is at schema 14. Instruction files other than `AGENTS.md` and
+The report is at schema 15. Instruction files other than `AGENTS.md` and
 `CLAUDE.md` are preserved but are not yet inspected or certified as discoverable
 by the CLI.
 
@@ -211,9 +239,9 @@ remain outside the machine-checked result.
 
 ## Resource and Interface Boundary
 
-The installed package contains one Markdown collection: the six starter files
-`init` places into a project, plus `.context/README.md`, which only `sync-index`
-ever writes. The package ships no example documents; people and agents create or
+The installed package contains one Markdown collection: the seven starter files
+`init` places into a project, of which only `sync-index` rewrites
+`.context/index.md` afterward. The package ships no example documents; people and agents create or
 reuse the clearest project-specific source when recurring detail justifies it.
 
 The managed project-context namespace is `.context/`. The CLI neither discovers

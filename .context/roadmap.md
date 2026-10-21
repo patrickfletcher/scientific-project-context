@@ -4,19 +4,27 @@ Purpose: explain the order of the next few product moves.
 Read when: planning beyond the current task.
 Update when: trial evidence changes the sequence or a real release effort begins.
 
-## Now - Upgrade T2 and Watch It
+## Now - Upgrade T2 to dev24 and Watch It
 
-dev23 carries the response to the first colleague trial. `.context/evaluation.md`
-maps each T2 observation to its change, and `.context/product.md` holds the
-resulting rule that context records current state.
+dev23 and dev24 carry the response to the first colleague trial.
+`.context/evaluation.md` maps each T2 observation to its change, and
+`.context/product.md` holds the resulting rule that context records current
+state.
 
-Upgrading T2 tests the change twice: whether upgrade mode carries a new route
-and core into a project whose own rules also contributed, and whether its
-context then stays current state. `.context/evaluation.md` names the measure.
-The project plans its own overhaul at the same time, so separate what the
-upgrade changed from what the project rewrote.
+T2 has already taken dev23 and overhauled its own context, so the dev24 upgrade
+tests two things: whether the session restores the context skill before
+following its steps and takes instruction-file lines from the packaged file, and
+whether the context then stays current state. `.context/evaluation.md` names the
+measure. T2's index is still a `README.md` in `.context/` holding a hand-written
+list, so the upgrade is also the first real case of `check` reporting that file
+beside the new `index.md` and the session moving its text before deleting it.
 
-Hold the rest still while that runs: the six files, three commands, report
+Before T2 returns to the colleague: run the upgrade in a fresh session that is
+told only the skill and the mode, record the baseline the measure needs, and, if
+the colleague agrees to other providers seeing the repository, run the cold-start
+prompts in `.context/evaluation.md` on a scratch clone in two or three harnesses.
+
+Hold the rest still while that runs: the seven files, three commands, report
 fields, and check identifiers. Record which version each trial runs.
 
 ## Next - The Remaining Trial Questions

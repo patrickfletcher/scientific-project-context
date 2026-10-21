@@ -21,6 +21,7 @@ from scientific_project_context.project import (  # noqa: E402
     agent_skill_path,
     apply_initialization,
     claude_skill_path,
+    plan_index_sync,
     plan_initialization,
     validate_agent_skill_content,
 )
@@ -85,7 +86,7 @@ class InitializationTests(unittest.TestCase):
         plan = plan_initialization(self.catalog, target, "retrofit")
 
         self.assertEqual(("AGENTS.md",), plan.identical_files)
-        self.assertEqual(5, len(plan.copy_files))
+        self.assertEqual(len(STARTER_INVENTORY) - 1, len(plan.copy_files))
         self.assertFalse(plan.conflicts)
 
         result = apply_initialization(plan)
@@ -93,6 +94,30 @@ class InitializationTests(unittest.TestCase):
         self.assertEqual("initialized", result.status)
         self.assertEqual("print('keep me')\n", unrelated.read_text(encoding="utf-8"))
         self.assert_starter_bytes(target)
+
+    def test_retrofit_writes_an_index_of_the_documents_already_there(self) -> None:
+        """The index is complete from the first run, not only once someone syncs it."""
+
+        target = self.root / "retrofit-with-documents"
+        document = target / ".context/methods/calibration.md"
+        document.parent.mkdir(parents=True)
+        document.write_text(
+            "# Calibration\n\nPurpose: the current calibration.\n"
+            "Read when: changing a calibration.\nUpdate when: a calibration changes.\n",
+            encoding="utf-8",
+        )
+
+        plan = plan_initialization(self.catalog, target, "retrofit")
+        apply_initialization(plan)
+
+        index = (target / ".context/index.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "- [methods/calibration.md](methods/calibration.md)\n"
+            "  - Purpose: the current calibration.\n"
+            "  - Read when: changing a calibration.\n",
+            index,
+        )
+        self.assertEqual("no_changes", plan_index_sync(self.catalog, target).action)
 
     def test_pre_dev13_design_layout_is_not_silently_migrated(self) -> None:
         target = self.root / "legacy-design-layout"
@@ -347,6 +372,14 @@ class InitializationTests(unittest.TestCase):
             if step["action"] == "review_instruction_compatibility"
         )
         self.assertIn("No edit needed", route_step["instruction"])
+        # Upgrades wrote always-read lines from the core when the packaged file was out of reach.
+        self.assertEqual(
+            self.template_content("AGENTS.md").decode("utf-8"),
+            adoption["packaged_agents_file"],
+        )
+        self.assertIn(
+            "Packaged AGENTS.md, to compare with yours", reporting.render_human(payload)
+        )
         self.assertEqual("# Project Instructions\n\n" + project.CONTEXT_ROUTE_BLOCK + "\n", agents.read_text(encoding="utf-8"))
 
     def test_retrofit_reports_retained_skill_as_review_required(self) -> None:

@@ -60,7 +60,7 @@ class PackageArtifactVerifierTests(unittest.TestCase):
         )
         self._write("template/AGENTS.md", b"# Fixture instructions\n")
         self._write("template/.context/project.md", b"# Fixture project\n")
-        self._write("template/.context/README.md", b"# Fixture index\n")
+        self._write("template/.context/index.md", b"# Fixture index\n")
 
     @staticmethod
     def _metadata() -> bytes:

@@ -95,8 +95,8 @@ existing instructions with a pre-dev22 build, upgraded to dev22 two weeks later,
 and used daily for about three weeks. `spctx` was installed in the project's
 environment and run during the trial. No transcripts were kept and the agent host
 was not recorded, so skill selection is not observable; the evidence is the Git
-history and a written audit of the project's documents. The packaged core and
-skill bodies were unmodified. Some project rules that contributed below were
+history, a written audit of the project's documents, and the colleague's written
+feedback on the product. The packaged core and skill bodies were unmodified. Some project rules that contributed below were
 added during the trial in the author's own maintenance sessions.
 
 | Trial | Observation | What changed |
@@ -109,6 +109,24 @@ added during the trial in the author's own maintenance sessions.
 | T2 | No writing guidance reached internal documents. `spctx-public-writing` excludes them, and a project-added style section was ignored: agents imitated the documents they read. | dev23: a writing line in the starter's working style, and the compact file framed as the example later sessions copy. |
 | T2 | Exploratory work became expensive again by a different route from T1: compute engineering and its documentation rather than validation evidence, each step approved one at a time on the agent's proposal. | dev23: `spctx-scientific-change` asks for the question before a sub-investigation, prefers shrinking a computation to engineering around it, and reports what was learned first. |
 | T2 | `check` was run, and its repeated-passage findings were copied into a context document instead of being resolved. It reported nothing about any of the above, as designed. | Size and banned-word checks declined: moving text to another file or substituting a synonym clears either, which fails the report test in `product.md`. |
+| T2 | Upgrade to dev23 in a fresh session with the skill named: it announced the skill, mode, and steps; replaced the route, core, and three skill bodies and checked them byte for byte; kept all three trigger phrasings; and stayed within the prompt's scope. It replaced the core without the core being named. | First observed announcement line and first core replacement during an upgrade. The prompt asked for every package-maintained region and the session followed the project's older copy of the procedure, so neither the new numbered step nor the new finding text is tested on its own. dev24: the upgrade's first step restores the skill's own body, and `DH-SKILL-003` on that skill says to restore it before upgrading, so an older copy no longer runs the upgrade. |
+| T2 | Asked to list rather than remove, the whole-file duplicate step ran for the first time. It also listed the starter's own deliberate restatements, such as where facts live and the working style, which removal would have deleted. | dev24: the duplicate step no longer counts a statement aimed at another reader or moment, and notes that the packaged instruction file is written that way. |
+| T2 | The upgrade surfaced project rules that contradict the new text: a per-run reading rule, per-run update triggers, leftover promotion wording, and a version pinned in prose. It also found that the starter's precedence list ranks the instruction file above the safeguards while the route and core say to ask on conflict. | Project rules go to the project's own pass. dev24: the starter's precedence list leaves the safeguards out of the order and says to stop and ask on a conflict with them. |
+| T2 | A refresh with the skill named changed the rules that produced the log, reported three small edits beyond the request, and resynced the index unasked because its generated summaries still carried the old per-run triggers. | Confirms the dev23 refresh step; no change. |
+| T2 | The dev23 always-read lines reached the project only by hand, because an upgrade carries managed regions alone. Written from the core and skill, they repeated packaged text, which `check` reported; the project kept them. | dev24: `init` prints the packaged instruction file whenever it keeps a different one, and upgrade and retrofit offer its sections in the packaged wording instead of writing them from the core. First field case of a project keeping a packaged passage in its always-read file. |
+| T2 | The author's cleanup prompt removed protective rules along with the narration they produced; the agent flagged a notebook-preservation rule the project may want back. | No product change: the dev23 core keeps a rule and drops narration of compliance with it. The prompt went further than the guidance. |
+| T2 | A project pass with the skill named rewrote the compact file to about a fifth of its length, drafted a findings page under the review marker while flagging two numbers it had derived rather than copied, and retired four log documents. | Confirms the review-marker path for a drafted scientific summary. Whether the result holds through normal use is the open measure. |
+| T2 | Retiring those documents broke a project verification script that read them by path. The retire procedure covers links and routes, not code that reads a context file; the agent found the references and reported them. | dev24: the retire steps search code, notebooks, scripts, and configuration for the path and fix or report what reads it. |
+| T2 | The instruction file located `spctx` by absolute paths containing a user name, one per machine, plus a pinned version that went stale at the next upgrade, in a repository meant to be shared. | dev24: `Project Essentials` and the setup step ask for the environment's name and a repository- or home-relative path, without a user name or version. |
+| T2 | About forty analysis scripts hash their own source and stop with an error when it changes. The colleague attributed this to the core's request for file hashes beside outputs, but every guard predates dev23, which added that wording; the guards' error messages echo the older rules to mark changed evidence stale and keep discrepant results, and the project's own plan asked for checksums. The dev23 wording does not separate source from inputs, so it would reinforce the pattern. | dev24: the core asks code to record its version as a Git commit, settings, environment, and checksums only of inputs obtained from outside the project, and never to refuse to run because its source changed; `spctx-scientific-change` calls a failed reproduction a judgment for the moment, not a guard to build into code. |
+| T2 | The staleness rules read as an obligation at every level. The core's rerun-or-mark-stale line and the refresh step's matching sentence are ungated, and dev23 dropped the exploratory level's explicit release from staleness. | dev24: rerun-or-mark-stale applies only to what a relied-on result rests on, in the core and both skills, and the exploratory level again owes no staleness marking; keeping discrepant results stays an every-level rule. |
+| T2 | Ownership and authority wording outlived the dev23 pass: project and change authority in the context skill, owner and owns in the core and starter, material that must not change without a decision, and the starter's heading for protected material, which invited long lists. The project's shorter heading, naming the inputs themselves, read better. | dev24: a second plain-language pass names the people responsible instead, and the starter test now rejects authority, owner, owns, and the decision-gate phrase. The heading is Protected inputs, the name the instruction file and route already use, limited to inputs the work takes as given. |
+| T2 | Gathering every proposal awaiting a decision into one page removed most of the hedging from the adopted pages. The colleague suggested shipping it as a document type. | dev24, as a rule rather than a type, per `product.md`: the starter's unresolved-questions prompt asks to keep proposals in one place apart from adopted text. |
+| T2 | A system of numbered codes for questions, decisions, checks, and sources grew to about 1,500 references before the project replaced it with names. Nothing shipped discouraged it. | dev24: one naming line in the starter's writing guidance. `check`'s own numbered identifiers are machine keys in the JSON report and stay. |
+| T2 | Two report defects: a `Purpose` line over the 280-character limit was reported as missing, and the plain report counts passages repeated among the project's own documents without naming them, although the context skill tells the reader to open them. The list appears only with `--diff` or `--json`. | dev24: an over-long line is reported as too long, with its length and the limit, and the plain report names each repeated pair and passage. |
+| T2 | Index discovery reads only `.context/` and `.context/active/`, so a subfolder of focused documents with its own index was left out without notice, while the other `check` scans read it. The packaged index says where to put documents, but the project had rewritten that paragraph. | dev24: the index lists every Markdown file under `.context/`, in any folder; see the next row. |
+| T2 | Preparing the dev24 upgrade found the same documents listed in four places: the compact file's opening lines, a hand-written list in the index, the generated list beneath it, and the subfolder's own index. The generated list had already fallen behind a new document. | dev24: the index is `.context/index.md`, a starter file that `init` writes and `sync-index` regenerates, holding only the packaged heading and a link to each document with its `Purpose` and `Read when` lines. The routing block sends agents to it alongside `project.md`; the starter and skills say to keep no other list; `check` reports text around the list and a `README.md` beside it, and `sync-index` stops rather than discard project text. |
+| T2 | The missing-path finding fired on gitignored inputs that exist only on the analysis machine. A backticked input path was later rewritten as prose naming only its directory, the contortion `product.md` warns a false finding invites. Rewording the finding would not help: it would repeat on every run. | dev24: the finding skips paths the project's `.gitignore` files exclude, read without running Git. |
 
 ## Agent Skill Behavior Scenarios
 
@@ -167,9 +185,20 @@ the structural-only boundary intact.
 
 ## Next Useful Evidence
 
-- After dev23 reaches T2 by upgrade, whether its context stays current
-  state for two weeks: compact-file length and the density of defensive words,
-  measured outside the product.
+- After dev24 reaches T2 by upgrade: whether the session restores the context
+  skill before following its steps, offers instruction-file sections in the
+  packaged wording, and moves the hand-written index list when `sync-index`
+  stops on it; then whether the context stays current state for two weeks,
+  measured by compact-file length, index length, and the density of defensive
+  words outside the product, from a baseline taken at handback.
+- A cold-start test before handback, on a scratch clone and only with the
+  colleague's agreement to other providers: fresh sessions in two or three
+  harnesses, each given the same three prompts (the current state and next
+  step; an exploratory analysis change; a status note for a collaborator).
+  Record files read and in what order, whether a skill announced itself, and the
+  author's score of each answer. This is the fixed-questions outcome measure
+  `.context/project.md` lists as a candidate; T2's handback is the one chance to
+  get a before.
 - Colleague trials and further author trials, recorded under the rules above:
   whether skills are found without being named, whether exploratory work stays
   cheap, whether the report lines prompt anything, and whether context upkeep

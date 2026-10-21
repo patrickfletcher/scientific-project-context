@@ -37,7 +37,7 @@ readers outside the immediate work, use `spctx-public-writing` instead.
 
 ## 1. Inspect Before Asking
 
-Read `AGENTS.md`, `.context/scientific-practice.md`, and `.context/project.md`. If `.context/README.md` exists, use it as the context index and select only sources relevant to the task. Treat the scientific-practice file as the stable cross-project contract and the project file as its current project-specific application.
+Read `AGENTS.md`, `.context/scientific-practice.md`, `.context/project.md`, and `.context/index.md`, the generated index, and from the index select only the sources relevant to the task. Treat the scientific-practice file as the stable cross-project contract and the project file as its current project-specific application.
 
 For an existing project, inspect targeted evidence before asking questions:
 
@@ -46,7 +46,7 @@ For an existing project, inspect targeted evidence before asking questions:
 - protocols, controls, transformations, exclusions, models, parameters, schemas, calibration or acquisition records, instrument state, configurations, and output locations
 - visible provenance, safety, access, licensing, citation, and governance constraints
 
-Classify findings as observed, proposed interpretation, or unknown. Filenames alone do not establish scientific meaning or change authority.
+Classify findings as observed, proposed interpretation, or unknown. Filenames alone do not establish scientific meaning or who may change something.
 
 Also identify which instruction files the agents in use actually read, such as `AGENTS.md` or a project-owned platform-specific instruction or skill path. Presence alone does not establish that an agent reads a file.
 
@@ -63,12 +63,19 @@ them is trustworthy afterward.
 | --- | --- | --- |
 | `AGENTS.md` or another instruction file the agents in use actually read | agents, every session | Operational constraints to honor before acting: environment activation and which tools are installed there, run and test commands, protected inputs in one line, conventions, and routes. |
 | `README.md` and other public documentation | humans, including outsiders | Purpose in plain language, setup, commands, and outputs. |
-| `.context/project.md` and its focused sources | humans and agents, on demand | Scientific purpose, current state, evidence, risks, and open decisions. |
+| `.context/project.md` and the other documents under `.context/` | humans and agents, on demand | Scientific purpose, current state, evidence, risks, and open decisions. |
 
 Each durable fact belongs in exactly one place; the others link to it. When a
 fact is both operational and scientifically material, such as a protected input,
 put the one-line constraint in the instruction file and the reasoning in project
 context.
+
+The list of context documents follows the same rule. `.context/index.md` holds
+it, generated from the opening lines of every Markdown file under `.context/`.
+Do not keep another list of them in `project.md`, in a folder's own README, or
+in the instruction file, and remove one when you find it: a hand-kept list
+drifts from the files. Link a document only where a statement points to its
+detail.
 
 Fill the `Project Essentials` block in `AGENTS.md` early, because an agent that
 cannot activate the right environment or run the tests will guess. Record the
@@ -77,8 +84,11 @@ Replace every bracketed prompt with this project's answer or delete the line; a
 prompt left in place is not an answer. If `spctx` is used at all, say
 which environment it is installed in — the command is only reachable from
 that environment, and agents otherwise report it as unavailable and work
-around it. The `init` report names the interpreter it ran from, so record that
-observed path instead of guessing one.
+around it. The `init` report names the interpreter it ran from; record the
+environment's name and that path relative to the repository or the home
+directory instead of guessing one. Leave out user names and version numbers:
+the file is shared across machines, and a version goes stale at the next
+upgrade.
 
 Keep transient counts, verification tallies, and internal vocabulary out of
 public documentation. Anything a collaborator reads should be readable by an
@@ -91,10 +101,10 @@ this system's vocabulary into a project that has its own terms.
 Installing context files is not the same as activating them. Reliable maintenance requires one project-authorized instruction file that agents actually read, routing them to `.context/project.md`, this skill, and `spctx-scientific-change` when relevant.
 
 - For a new project using the packaged `AGENTS.md`, the route becomes active after initialization is applied.
-- For a retrofit, keep existing instructions authoritative. Compare them with the compact project-context routing block reported by `spctx init`, resolve material conflicts, and ask the project authority to approve adding only that route. Replace any earlier SPCTX routing block instead of duplicating it; do not replace the full instruction file merely to install this system.
-- Once the route is active in a retrofit, the project has the skills but none of the packaged instruction guidance. Offer those sections one at a time, rewritten for this project, and let the user refuse any of them. Start with `Project Essentials`: real use showed that an agent without it invents its own setup. Leave out anything a conventions file here already covers, and link to that file instead. Git is the backup; do not save a second copy of the instruction file.
+- For a retrofit, keep existing instructions authoritative. Compare them with the compact project-context routing block reported by `spctx init`, resolve material conflicts, and ask whoever maintains the project's instructions to approve adding only that route. Replace any earlier SPCTX routing block instead of duplicating it; do not replace the full instruction file merely to install this system.
+- Once the route is active in a retrofit, the project has the skills but none of the packaged instruction guidance. Offer those sections one at a time, rewritten for this project, and let the user refuse any of them; `spctx init . --dry-run` prints the packaged file to work from. Start with `Project Essentials`: real use showed that an agent without it invents its own setup. Leave out anything a conventions file here already covers, and link to that file instead. Git is the backup; do not save a second copy of the instruction file.
 - The complete canonical procedures live in `spctx-project-context` and `spctx-scientific-change` under `.agents/skills/`. Confirm that the agents in use discover this layout; file presence alone is not behavioral evidence.
-- Claude Code reads neither `.agents/skills/` nor any other path under `.agents/`, and reads `AGENTS.md` only while the project has no `CLAUDE.md` above the working directory. For a project that uses it, `spctx init . --claude` adds pointer skills under `.claude/skills/` that carry the same descriptions and route to the canonical files. Where a `CLAUDE.md` already exists, ask the project authority to add an `@AGENTS.md` import line to it rather than keeping a second copy of the instructions.
+- Claude Code reads neither `.agents/skills/` nor any other path under `.agents/`, and reads `AGENTS.md` only while the project has no `CLAUDE.md` above the working directory. For a project that uses it, `spctx init . --claude` adds pointer skills under `.claude/skills/` that carry the same descriptions and route to the canonical files. Where a `CLAUDE.md` already exists, ask whoever maintains it to add an `@AGENTS.md` import line to it rather than keeping a second copy of the instructions.
 - Beyond that, other skill layouts are outside what this system manages. Never duplicate a procedure body to reach another host.
 - If no instruction file the agents read may be changed, report `manual_activation_required`. The files may still be used when explicitly requested, but do not claim that future agents will discover or maintain them automatically.
 
@@ -105,7 +115,7 @@ Populate or refresh only applicable sections of `.context/project.md`:
 - purpose, user, and useful outcome
 - current materials and entry points, how a result or behavior is checked, and operating conditions that affect the science
 - current focus and next meaningful step
-- protected or curated material that must not change silently
+- protected inputs the work takes as given
 - what later work now relies on, kept short: the default is that nothing is settled, and only the exceptions are named
 - main way the current result or behavior could be wrong
 - smallest useful check or observation and expected signal
@@ -120,11 +130,11 @@ screen. It is also the example later sessions imitate: lead with what is known,
 state each limit once, and keep out run history, permissions, and lists of what
 did not change.
 
-Start every current context source with short `Purpose`, `Read when`, and `Update when` lines, so a reader can pick the right one without opening all of them.
+Start every current context source with short `Purpose`, `Read when`, and `Update when` lines, so a reader can pick the right one without opening all of them. The index shows the first two; the third tells the next editor when the document needs changing.
 
 ## 5. Ask Only Material User-Owned Questions
 
-Ask a small batch only for facts or decisions the project cannot establish. Prioritize questions that block the next step: scientific meaning, intended outcome, change authority, expected validation behavior, safety, access, scope, or a material source conflict.
+Ask a small batch only for facts or decisions the project cannot establish. Prioritize questions that block the next step: scientific meaning, intended outcome, permission to change something, expected validation behavior, safety, access, scope, or a material source conflict.
 
 Draft a proposed validation check from project evidence when possible; let the user correct its scientific meaning or expected signal. Do not make the user restate observable paths or commands.
 
@@ -147,7 +157,9 @@ history to Git. A focused source's `Update when` line should name a change in
 what it says is true, such as an answer, a method, or a decision, not an event
 such as a run finishing.
 
-A context index becomes useful only when several focused sources make selection non-obvious.
+Every file under `.context/` appears in the index, so add one there only when it
+is current context. Anything that is not should live elsewhere in the
+repository, or only in Git history.
 
 ## 7. Draft, Review, and Integrate
 
@@ -156,18 +168,18 @@ When another source is justified:
 1. Explain the recurring detail and proposed home in one short paragraph.
 2. Draft supported content and mark it with a line reading `DRAFT CONTEXT - REVIEW REQUIRED`.
 3. Make unknowns explicit instead of inventing them.
-4. Ask the user to confirm only consequential scientific meaning, change authority, safety, claims, licensing, ethics, or governance.
+4. Ask the user to confirm only consequential scientific meaning, permission to change, safety, claims, licensing, ethics, or governance.
 5. Remove the marker after supported facts and material judgments are confirmed.
 6. Replace moved detail in `.context/project.md` with a short link.
-7. Synchronize the context index if navigation is no longer obvious.
+7. Run `spctx sync-index .` so the index lists it.
 
-Synchronize the index only after context routes change. Creating the clearest project-specific source directly remains valid; the tool does not prescribe its kind or scientific content and never makes generated content authoritative.
+Creating the clearest project-specific document directly remains valid. The index lists it by its own opening lines and prescribes neither its kind nor its content, and nothing generated becomes authoritative by being listed.
 
 Do not repeat a declined suggestion unless the recurring detail materially changes.
 
 ## 8. Maintain and Retire Context
 
-Maintenance is event-driven, not a periodic documentation ritual. At the end of work, update only facts that actually changed: executable reality, current focus or next step, protected inputs, scientific risk, checks, current findings or staleness, unresolved questions, and context routes. Remove resolved prompts and completed transient work rather than accumulating a work log.
+Maintenance is event-driven, not a periodic documentation ritual. At the end of work, update only facts that actually changed: executable reality, current focus or next step, protected inputs, scientific risk, checks, current findings or staleness, unresolved questions, and the index when a document was added, renamed, or removed. Remove resolved prompts and completed transient work rather than accumulating a work log.
 
 When a document has already become a log, rewrite it as current state instead of
 trimming entries: keep the current answers, their limits, and what is still
@@ -182,7 +194,7 @@ now assume. If so, propose adding it to the relied-on list in `.context/project.
 and let the user decide. That list is empty by default, and nothing else in the
 system will notice when it should stop being empty.
 
-When an input, method, setting, dependency, environment, or public behavior changes, use `scientific-change` to identify affected evidence and outputs. Rerun them or mark them stale; age alone is not a reason to discard evidence that is discrepant, negative, protected, or supports a reported claim.
+When an input, method, setting, dependency, environment, or public behavior changes under something the relied-on list names, use `spctx-scientific-change` to identify affected evidence and outputs, and rerun them or mark them stale. Exploratory results need neither. Age alone is not a reason to discard evidence that is discrepant, negative, protected, or supports a reported claim.
 
 When `spctx check` reports passages repeated among the project's own documents,
 treat that as a prompt to prune, not as a list to clear. It matches words only,
@@ -202,43 +214,61 @@ When a context source is no longer current or useful:
 
 1. Identify any rule, decision, evidence, uncertainty, or route that still matters.
 2. Move each still-current item to the project or public document where it belongs, without duplicating it.
-3. With the project's normal permission to change files, remove the retired source from current navigation and from the working tree. Use Git history for superseded planning and narrative unless project governance requires a separate record.
-4. If focused routes changed, preview and apply `spctx sync-index`; then run `spctx check .`.
+3. Search code, notebooks, scripts, and configuration for the source's path, and fix or report anything that reads it. Links and routes are not its only readers.
+4. With the project's normal permission to change files, remove the retired source from current navigation and from the working tree. Use Git history for superseded planning and narrative unless project governance requires a separate record.
+5. Run `spctx sync-index .` so the index drops it, then `spctx check .`.
 
 ## 9. Upgrade to a New Package Version
 
 Use this mode when a newly installed `spctx` may have changed the packaged
 files. The trigger is the new version, not a change in the repository.
 
-1. Run `spctx check . --diff`. It names every region that tracks the package,
+1. If this skill's own body differs from the packaged one, restore it first,
+   from the text `spctx init . --dry-run` prints, and follow the rest of this
+   section from the restored copy. The steps in an older copy belong to the
+   version it came from.
+2. Run `spctx check . --diff`. It names every region that tracks the package,
    and prints the exact text that differs. A region carrying this project's own
    trigger phrasings is reported as tuning, not as something to undo.
-2. Where the routing block differs, replace the text between its markers with
+3. Where the routing block differs, replace the text between its markers with
    the current packaged block. It is the only part of the instruction file the
    package maintains, and a stale one can point at skills or files that have moved.
    Everything outside the markers is the project's.
-3. Where the scientific-practice core differs, replace the text between its
+4. Compare the rest of the instruction file with the packaged one, which
+   `spctx init . --dry-run` also prints. Offer packaged lines whose point this
+   project's file lacks, one section at a time and in the packaged wording, and
+   let the user refuse any. Skip what the project has replaced with its own
+   rule. Do not write always-read lines from the core or a skill instead: they
+   would repeat text the package maintains elsewhere.
+5. Where the scientific-practice core differs, replace the text between its
    markers with the packaged core that `spctx init . --dry-run` prints. A new
    version usually changes it, so a difference here is expected rather than a
    sign that someone edited it. Keep the project's own section below the
    markers, and move any wording the project added inside them there first.
-4. Run `spctx init . --dry-run` to see whether the new version ships a file this
+6. Run `spctx init . --dry-run` to see whether the new version ships a file this
    project does not have yet, then apply it with `spctx init .`. Occupied files
    are never overwritten.
-5. Where a skill body diverged, restore the packaged body. `spctx init . --dry-run`
+7. Resolve what `spctx check .` reports about the index and the files beside it.
+   Run `spctx sync-index .` when the list is out of date. Where it reports text
+   the project wrote in a file the package generates or does not use, move
+   anything still needed to `.context/project.md` or another context document,
+   then delete that file.
+8. Where a skill body diverged, restore the packaged body. `spctx init . --dry-run`
    prints the packaged text of every retained skill, and
    `--json` carries the same text under `context_adoption.suggested_skills`, so
    take it from there rather than reconstructing it from a diff. Project facts
    belong in the instruction file or `.context/`, not in a modified procedure.
-6. Where a description diverged, restore the packaged text and re-append this
+9. Where a description diverged, restore the packaged text and re-append this
    project's phrasings after the separator, following step 11. Never
    drop packaged trigger categories to make room for project ones.
-7. Read the whole always-read instruction file, not only the sections you just
+10. Read the whole always-read instruction file, not only the sections you just
    edited, and remove any rule it states twice, once there and once in a skill
    or a context source. Wording an older packaged version left behind does not
    become project policy by sitting there. Keep the project's own rules and
-   delete only the duplicate.
-8. Re-run `spctx check .`, then report on separate lines: which packaged changes
+   delete only the duplicate. A restatement for a different reader or moment
+   is not a duplicate, as Maintain and Retire Context explains; the packaged
+   instruction file's own lines are written that way.
+11. Re-run `spctx check .`, then report on separate lines: which packaged changes
    you applied; how many duplicated rules you removed and which duplicates you
    deliberately kept; whether each skill description carries this project's
    phrasings, adding them per step 11 if it does not; and anything the

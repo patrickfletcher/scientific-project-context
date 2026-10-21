@@ -78,7 +78,10 @@ Mostly, you just work. `AGENTS.md` tells each agent to read
 `.context/project.md` first, and to rewrite the affected part of the context in
 place when the work changes something that matters later, such as a new
 protected input, a changed answer, or a result that something now depends on.
-Run history stays in Git instead of piling up in the context.
+
+The context describes the project as it is now and relies on Git for its
+history. Keep logs of runs, changes, and approvals out of it: they bury the
+current answer, and Git already records what changed and when.
 
 Three skills cover the moments that need more care:
 
@@ -115,6 +118,7 @@ a claim, or goes public.
 
 ```text
 AGENTS.md                                          instructions for agents
+.context/index.md                                  the list of context documents
 .context/project.md                                the project summary
 .context/scientific-practice.md                    the scientific-practice agreement
 .agents/skills/spctx-project-context/SKILL.md      set up and maintain the context
@@ -131,11 +135,13 @@ provenance and uncertainty, and not claiming more than the evidence supports.
 Below its shared part is a section for your field's own standards, which your
 agent can draft from a protocol or reporting guideline you already follow.
 
-Beyond these, `.context/` is yours to organize. When a topic outgrows the
-summary, such as a calibration procedure or a list of analysis decisions, an
-agent can give it its own document and mark it for review until you've
-confirmed it. Once there are several, `spctx sync-index` writes an index of the
-documents in `.context/` and `.context/active/` to `.context/README.md`.
+Beyond these, `.context/` is yours to organize, in whatever folders suit the
+project. When a topic outgrows the summary, such as a calibration procedure or a
+list of analysis decisions, an agent can give it its own document and mark it
+for review until you've confirmed it. `.context/index.md` links every document
+under `.context/` with a line on when to read it. It is generated: `spctx
+sync-index` rewrites it when documents are added, renamed, or removed, so don't
+edit it by hand or keep a second list elsewhere.
 
 ## Which agents it works with
 
@@ -158,7 +164,7 @@ you can run them yourself too.
 | --- | --- |
 | `spctx init <project>` | Adds any missing starter files and never overwrites existing ones. `--dry-run` previews; `--claude` adds the Claude Code pointers. |
 | `spctx check <project>` | Reports what's set up and what isn't yet, without changing anything. It describes the project rather than grading it. `--json` gives the same report in machine-readable form. |
-| `spctx sync-index <project>` | Creates or updates the index of context documents. `--dry-run` previews. |
+| `spctx sync-index <project>` | Regenerates `.context/index.md`, the list of context documents. `--dry-run` previews. |
 
 Add `--help` to any command for its options.
 

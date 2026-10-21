@@ -1,7 +1,7 @@
 # Design Rationale
 
 Purpose: preserve the small set of enduring reasons behind the current Scientific Project Context design without reviving superseded template structures.
-Read when: a current product decision needs deeper justification than `.context/product.md` provides.
+Read when: a current product decision needs deeper justification than `.context/product.md` provides, or a change to the scientific safeguards needs the sources behind them.
 Update when: evidence changes one of these rationales or a rejected approach becomes viable for a new reason.
 
 This is rationale, not current operating policy or empirical proof. Current behavior lives in active context, product files, code, and tests.

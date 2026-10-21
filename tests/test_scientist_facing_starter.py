@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import itertools
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -115,6 +116,34 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
             for term in ("promot", "authoritative source", "authoritative home", "domain authority"):
                 with self.subTest(path=path.relative_to(TEMPLATE).as_posix(), term=term):
                     self.assertNotIn(term, text)
+
+    def test_shipped_text_names_people_and_inputs_rather_than_authority_and_ownership(self) -> None:
+        """A second trial pass still found authority, ownership, and decision-gate wording."""
+
+        for path in sorted(TEMPLATE.rglob("*.md")):
+            text = path.read_text(encoding="utf-8").casefold()
+            for pattern in (
+                r"\bauthority\b",
+                r"\bowners?\b",
+                r"\bowns\b",
+                r"without a decision",
+                r"changed silently",
+            ):
+                with self.subTest(path=path.relative_to(TEMPLATE).as_posix(), pattern=pattern):
+                    self.assertIsNone(re.search(pattern, text))
+
+    def test_starter_keeps_proposals_codes_and_conflicts_in_their_place(self) -> None:
+        """Real use grew numbered codes, hedged adopted text, and ranked the safeguards."""
+
+        agents = self.read("AGENTS.md")
+        self.assertIn("Name things by what they are rather than by numbered codes", agents)
+        conflicts = agents[agents.index("## When Guidance Conflicts") : agents.index("## Working Style")]
+        self.assertIn("is not settled by rank: stop and ask", conflicts)
+        self.assertNotIn("scientific-practice.md` when", conflicts)
+        self.assertIn("without a user name or version number", agents)
+        project = self.read(".context/project.md")
+        self.assertIn("**Protected inputs**", project)
+        self.assertIn("Keep proposals awaiting a decision here", project)
 
     def test_agents_file_prompts_for_essentials_and_states_ownership(self) -> None:
         agents = self.read("AGENTS.md")
@@ -296,6 +325,40 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
         practice = self.read(".context/scientific-practice.md")
         self.assertIn("Above the exploratory level, name the smallest check", practice)
         self.assertIn("For a result something already depends on, keep enough identity", practice)
+        # Real use read an ungated staleness rule as an obligation on exploratory work.
+        self.assertIn("No check, evidence record, or staleness marking is owed", practice)
+        self.assertIn("When something such a result rests on changes", practice)
+
+    def test_practice_core_identifies_code_by_version_not_by_source_hashes(self) -> None:
+        """Real use wrote scripts that hashed their own source and refused to run on a change."""
+
+        practice = self.read(".context/scientific-practice.md")
+        self.assertNotIn("file hashes", practice)
+        for phrase in (
+            "the code version as a Git commit",
+            "checksums of inputs obtained from outside the project",
+            "never make code refuse to run because its source changed",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, practice)
+        skill = self.read(".agents/skills/spctx-scientific-change/SKILL.md")
+        self.assertIn("not a guard to build into code", skill)
+
+    def test_context_skill_maintenance_gates_staleness_and_finds_readers_of_retired_files(self) -> None:
+        skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
+        self.assertIn("Exploratory results need neither", skill)
+        # Retiring a document once broke a script that read it by path.
+        self.assertIn("Search code, notebooks, scripts, and configuration for the source's path", skill)
+        self.assertIn("Leave out user names and version numbers", skill)
+
+    def test_upgrade_restores_its_own_procedure_first_and_works_from_packaged_text(self) -> None:
+        """An upgrade followed the project's older copy, and wrote always-read lines from the core."""
+
+        skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
+        upgrade = skill[skill.index("## 9. Upgrade") : skill.index("## 10.")]
+        self.assertIn("1. If this skill's own body differs from the packaged one, restore it first", upgrade)
+        self.assertIn("Compare the rest of the instruction file with the packaged one", upgrade)
+        self.assertIn("A restatement for a different reader or moment\n   is not a duplicate", upgrade)
 
     def test_scientific_change_skill_stops_at_the_exploratory_level(self) -> None:
         skill = self.read(".agents/skills/spctx-scientific-change/SKILL.md")
@@ -349,6 +412,26 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, route)
+
+    def test_the_index_is_the_one_list_of_context_documents(self) -> None:
+        """Real use kept four separately maintained lists of the same documents."""
+
+        agents = self.read("AGENTS.md")
+        route = agents[agents.index("<!-- BEGIN SPCTX PROJECT CONTEXT ROUTING v1 -->") :]
+        self.assertIn("`.context/index.md` for the list of every other context document", route)
+        self.assertIn("the index is generated, never edited by hand", route)
+        self.assertIn("Keep no other list of them", agents)
+        project = self.read(".context/project.md")
+        self.assertIn("keep no list of them here", project)
+        skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
+        self.assertIn("Do not keep another list of them", skill)
+        # Upgrade stays general: `check` names the file, so the skill carries no history.
+        upgrade = skill[skill.index("## 9. Upgrade") : skill.index("## 10.")]
+        self.assertIn("Resolve what `spctx check .` reports about the index", upgrade)
+        self.assertNotIn("README", upgrade)
+        index = self.read(".context/index.md")
+        self.assertTrue(index.rstrip("\n").endswith("<!-- END GENERATED CONTEXT INVENTORY -->"))
+        self.assertIn("Every other Markdown file under `.context/`, in any folder", index)
 
     def test_route_names_every_shipped_skill(self) -> None:
         """Listing some skills but not others leaves the rest reachable only by luck."""

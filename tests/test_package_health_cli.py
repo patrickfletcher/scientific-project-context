@@ -17,6 +17,7 @@ from scientific_project_context import (  # noqa: E402
     __version__,
 )
 from scientific_project_context import cli, health, reporting  # noqa: E402
+from scientific_project_context.project import apply_index_sync, plan_index_sync  # noqa: E402
 from scientific_project_context.resources import (  # noqa: E402
     ResourceCatalog,
     load_filesystem_resources,
@@ -299,6 +300,67 @@ class PackageHealthCliTests(unittest.TestCase):
 
         self.assertEqual([], [i for i in payload["findings"] if i["check_id"] == "DH-STALE-001"])
 
+    def test_paths_the_repository_ignores_are_not_reported_missing(self) -> None:
+        """Inputs that exist only where the analysis runs were reported, and prose was bent to clear it."""
+
+        (self.project / ".gitignore").write_text(
+            "# local inputs\ndata/*\n!data/keep.csv\n*.tif\nscratch/\n", encoding="utf-8"
+        )
+        (self.project / "data").mkdir()
+        (self.project / "src").mkdir()
+        (self.project / "results").mkdir()
+        (self.project / "results" / ".gitignore").write_text("*\n", encoding="utf-8")
+        project_context = self.project / ".context/project.md"
+        project_context.write_text(
+            project_context.read_text(encoding="utf-8")
+            + "\nInputs: `data/samples.csv`, `data/raw/run1.csv`, `src/frame.tif`, "
+            "`results/fit/summary.csv`, `src/scratch/tmp.py`, `data/keep.csv`, `src/missing.py`.\n",
+            encoding="utf-8",
+        )
+
+        _, payload = self.run_json()
+
+        self.assertEqual(
+            ["data/keep.csv", "src/missing.py"],
+            [i["evidence"] for i in payload["findings"] if i["check_id"] == "DH-STALE-001"],
+        )
+
+    def test_an_overlong_routing_line_is_reported_as_too_long_not_missing(self) -> None:
+        (self.project / ".context" / "method.md").write_text(
+            "# Method\n\nPurpose: " + "word " * 70 + "\nRead when: changing it.\nUpdate when: it changes.\n",
+            encoding="utf-8",
+        )
+
+        _, payload = self.run_json()
+
+        guide = [i for i in payload["findings"] if i["check_id"] == "DH-GUIDE-001"]
+        self.assertEqual(1, len(guide))
+        self.assertIn("too long", guide[0]["message"])
+        self.assertIn("over 280 characters", guide[0]["evidence"])
+        self.assertIn("Purpose (349)", guide[0]["evidence"])
+        self.assertNotIn("missing", guide[0]["evidence"])
+
+    def test_plain_report_names_each_repeated_pair(self) -> None:
+        """A count alone gave the reader nowhere to start."""
+
+        passage = (
+            "Every excluded recording needs a specific recorded reason that a reviewer "
+            "can check against the acquisition notes later."
+        )
+        for name in ("curation", "tasks"):
+            (self.project / ".context" / f"{name}.md").write_text(
+                f"# {name}\n\nPurpose: {name}.\nRead when: {name}.\nUpdate when: {name}.\n\n{passage}\n",
+                encoding="utf-8",
+            )
+
+        output = io.StringIO()
+        cli.main(["check", str(self.project)], catalog=self.catalog, stdout=output)
+
+        human = output.getvalue()
+        self.assertIn("Passages repeated among your own documents: 1", human)
+        self.assertIn(".context/curation.md repeats .context/tasks.md", human)
+        self.assertIn("specific recorded reason", human)
+
     def test_modified_scientific_core_is_reported_as_broken_without_failing_the_run(self) -> None:
         practice = self.project / ".context/scientific-practice.md"
         practice.write_text(
@@ -344,6 +406,7 @@ class PackageHealthCliTests(unittest.TestCase):
             "Update when: the method changes.\n",
             encoding="utf-8",
         )
+        apply_index_sync(plan_index_sync(self.catalog, self.project))
         before = tree_snapshot(self.project)
 
         json_exit, payload = self.run_json()
@@ -384,8 +447,8 @@ class PackageHealthCliTests(unittest.TestCase):
         self.assertNotIn("Semantic initialization", human)
         self.assertEqual(before, tree_snapshot(self.project))
 
-    def test_human_managed_index_is_warning_only_at_the_cli_boundary(self) -> None:
-        (self.project / ".context" / "README.md").write_text(
+    def test_an_index_without_a_generated_list_is_broken_at_the_cli_boundary(self) -> None:
+        (self.project / ".context" / "index.md").write_text(
             "# Context Index\n\n"
             "Purpose: route current context.\n"
             "Read when: selecting additional context.\n"
@@ -399,11 +462,11 @@ class PackageHealthCliTests(unittest.TestCase):
 
         self.assertEqual(0, exit_code)
         self.assertEqual(
-            {health.BROKEN: 0, health.UNFINISHED: 1, health.NOTED: 0},
+            {health.BROKEN: 1, health.UNFINISHED: 0, health.NOTED: 0},
             payload["observed"],
         )
         self.assertEqual("DH-ROUTE-001", payload["findings"][0]["check_id"])
-        self.assertEqual(health.UNFINISHED, payload["findings"][0]["severity"])
+        self.assertIn("spctx sync-index .", payload["findings"][0]["next_action"])
 
     def test_a_missing_starter_file_is_reported_as_broken_with_a_zero_exit(self) -> None:
         (self.project / "AGENTS.md").unlink()

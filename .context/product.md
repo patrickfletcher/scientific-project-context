@@ -33,13 +33,13 @@ Supporting project context makes those specifications usable: current reality, c
 1. **Inspect before asking.** Recover observable facts from the project before asking a user to restate them.
 2. **Keep context and evidence proportional.** Start small and add a focused context document only when recurring detail no longer fits comfortably. Scale the evidence a result owes to what depends on it, not to whether the work is scientifically material. Real use showed the materiality gate alone producing validation machinery for exploratory work, because nothing in the contract could say "not yet".
 3. **Bring scientific practice into the work.** Surface relevant provenance, transformations, assumptions, uncertainty, protected inputs, failure risks, checks, evidence, limits, and staleness when the work makes them matter.
-4. **Give each durable fact one authoritative home.** Reuse an existing issue tracker, README, data dictionary, test plan, architecture document, or public guide when it already works. Choose the correct surface before choosing the file: see Surface Ownership below.
+4. **Give each durable fact one authoritative home.** Reuse an existing issue tracker, README, data dictionary, test plan, architecture document, or public guide when it already works. Choose the correct surface before choosing the file: see Surface Ownership below. The list of context documents is such a fact, and the one a tool can own outright, because every entry comes from the documents themselves: `.context/index.md` is generated, and no other list is kept. T2 showed four separately kept lists of the same documents, one already behind.
 5. **Keep meaning and permission review-owned.** Scientists and domain reviewers decide scientific meaning and claim scope; project, data, and community authorities decide permitted changes, use, and sharing. Do not infer one role from the other. Generated material remains visibly review-required until confirmed.
 6. **Bound automation to inspectable mechanics.** Tools may copy known resources, check structure, and update marked inventories. They do not decide what a project means or which conclusions are valid.
-7. **Connect results and claims to evidence.** Make the relevant chain from source inputs and transformations through settings, notebook/code/protocol and method identity, expected signal, observed result and uncertainty, limits, and staleness reconstructable.
+7. **Connect results and claims to evidence.** Make the relevant chain from source inputs and transformations through settings, notebook/code/protocol and method identity, expected signal, observed result and uncertainty, limits, and staleness reconstructable. Identify code by its version rather than by hashing its source: real use turned an ungated staleness rule into scripts that refused to run after their own edits.
 8. **Prepare for sharing without front-loading release work.** Confirmed internal context may become the basis for public documentation when a paper, archive, release, or handoff becomes real.
 9. **Measure outcomes, not document counts.** Reading burden, avoided errors, useful checks, and successful handoffs matter; file creation alone does not.
-10. **Write for the reader, not the repository.** Every file the product ships or generates should read as ordinary scientific and engineering English. Do not introduce private vocabulary into a project that has its own. Real use showed this product's register leaking into a scientific repository until the user banned it by hand, and a second trial showed the practice core and skills carrying it in themselves; a starter test now keeps promotion and source-ownership terms out of shipped text.
+10. **Write for the reader, not the repository.** Every file the product ships or generates should read as ordinary scientific and engineering English. Do not introduce private vocabulary into a project that has its own. Real use showed this product's register leaking into a scientific repository until the user banned it by hand, and a second trial showed the practice core and skills carrying it in themselves; a starter test now keeps promotion, authority, and ownership terms out of shipped text.
 
 ## Surface Ownership
 
@@ -70,10 +70,11 @@ A one-off analysis may remain in the starter set for its entire life. A maintain
 
 ## Current Product Shape
 
-The starter set contains six files:
+The starter set contains seven files:
 
 ```text
 AGENTS.md
+.context/index.md
 .context/project.md
 .context/scientific-practice.md
 .agents/skills/spctx-project-context/SKILL.md
@@ -82,6 +83,7 @@ AGENTS.md
 ```
 
 - `AGENTS.md` carries project authority and collaboration conventions, a compact versioned route to current context and its maintenance workflows, the project essentials an agent needs before acting (environment activation, test and tool invocation, protected inputs in one line, repository coding conventions or a route to an existing convention source, and where `spctx` is installed), and where each kind of fact lives. It is the scarce budget: everything an on-demand skill can own has been moved out of it.
+- `.context/index.md` is the index and only the index: a packaged heading, then a link to every other Markdown file under `.context/`, in any folder, with the `Purpose` and `Read when` lines from its top. `init` writes it, listing whatever documents already exist, and `sync-index` regenerates it. The routing block sends agents to it at the start of work alongside `project.md`, so one parallel read gives both the current state and the map.
 - `.context/scientific-practice.md` carries the stable, relevance-gated scientific contract: who decides meaning and who decides permission, what will depend on the result and the evidence each level owes, protected material and permitted use, questions and methods, provenance and uncertainty, discriminating checks, evidence and staleness, and claim boundaries.
 - `.context/project.md` is the compact project-specific application: purpose, materials and entry points, current work, protected material, main scientific risk, useful check, current findings and limits, what later work relies on, unresolved questions, and sharing intent. The relied-on list is the one that carries the intended-use levels in practice: the default is exploratory, only the exceptions are named, and a change that touches nothing on the list needs no ceremony.
 - `spctx-project-context` activates, initializes, refreshes, separates, and retires context, records the project's own field conventions in the practice contract outside the managed core, and tunes the skill trigger descriptions to the project's own vocabulary.
@@ -95,9 +97,11 @@ Design \u2014 choosing what observation would discriminate between competing exp
 
 Trigger descriptions ship generic and are project-owned afterward. `spctx` never overwrites them and checks only their structure, so tuning them to the project's real vocabulary is safe; `spctx-project-context` includes that step. Current guidance identifies `description` as the routing contract, which makes project-specific phrasing the cheapest available accuracy improvement.
 
-When several focused context documents make navigation non-obvious, `sync-index` adds `.context/README.md` as a slim router. It lists the starter files, the generated inventory, and an invitation to add whatever the project needs; it prescribes no document kinds. A project-specific document should be created directly when it is the clearest authoritative home. Current context sources begin with short `Purpose`, `Read when`, and `Update when` guidance so a person or agent can select and maintain them quickly.
+Every document under `.context/` is listed, so the index never has to be judged worth creating, and a project cannot end up with documents nobody can find. Earlier versions wrote the index only once several documents existed, read only `.context/` and one subfolder, and let a project write its own routes around the generated list; in T2 that produced a hand-written list beside the generated one, a third list in the compact file, and a fourth in a subfolder, while the generated one fell behind. A project-specific document should still be created directly when it is the clearest home. Current context sources begin with short `Purpose`, `Read when`, and `Update when` lines: the index shows the first two, and the third tells the next editor when the document needs changing.
 
-The prescribed layout stops at the six starter files plus that optional router. Everything under `.context/` beyond them is the project's, named as the project likes; asking an agent for a document is enough, and it will place one there. A project declares a settled fact in those documents whenever it wants the fact protected. The package ships no example documents: a collection of them that no command could deliver was removed at dev21.
+The index's name follows conventions agents already meet. In Karpathy's LLM wiki pattern, `index.md` is the catalog an agent reads before opening pages, and Google's Open Knowledge Format reserves `index.md` for a folder listing that producers may generate. `README.md` means human-facing setup, which is how the starter itself uses the word, so the index is not called that, and a `README.md` at the root of `.context/` is reported (`DH-ROUTE-007`) rather than listed. Both conventions also keep a `log.md`; this product does not, because Git already records history and a log inside context is what buried T2's current answers. If one flat list stops being enough, a folder's own listing would also be a generated `index.md`; until a project shows that need, subfolders keep no listing.
+
+The prescribed layout stops at the seven starter files. Everything else under `.context/` is the project's, named and foldered as the project likes, and all of it is listed; material that is not current context belongs elsewhere in the repository or in Git history. A project declares a settled fact in those documents whenever it wants the fact protected. The package ships no example documents: a collection of them that no command could deliver was removed at dev21.
 
 ## Activation and Maintenance Model
 
@@ -107,13 +111,13 @@ The prescribed layout stops at the six starter files plus that optional router. 
 | Current application | `.context/project.md` and only necessary focused sources | States what is true, uncertain, protected, active, and next. |
 | Stable safeguards | `.context/scientific-practice.md` | Defines the relevance-gated scientific contract without duplicating project facts. |
 | Agent Skills | `.agents/skills/` | Exposes concise trigger metadata and the complete procedures for context maintenance and scientifically material work. |
-| Bounded mechanics | `spctx check` and `spctx sync-index` | Checks exact structure and synchronizes only generated navigation. |
+| Bounded mechanics | `spctx check` and `spctx sync-index` | Checks exact structure and regenerates the index of context documents. |
 
 Files on disk are not adoption. Reliable self-maintenance requires the compact route in an instruction surface that the agents in use actually discover. New projects receive the complete route in the packaged `AGENTS.md`. For retrofits, initialization must preserve existing instructions, identify the actual discovery surface with an agent or user, and ask the project authority to approve the smallest compatible route after conflict review; full-file replacement is neither required nor allowed by the CLI. Project context and the canonical skills remain the single authority. If no durable route is approved, the honest state is `manual_activation_required`.
 
 Maintenance is event-driven. Ordinary work updates only the durable facts, evidence state, current focus, and routes that changed. A focused source is added only after sustained pressure and is retired after its still-current content has moved to an authoritative home. Git history is the default home for superseded planning and narrative; protected, discrepant, negative, stale, or claim-bearing evidence follows its scientific or governance retention rules instead of being discarded by age.
 
-Context records current state, rewritten in place. A record that gains an entry per run is a log: run detail belongs beside the outputs, written by the code that produced them, and narrative belongs in Git. Permission given in conversation, and statements of what stayed unchanged or did not happen, belong in neither. Real use (T2) showed an always-read rule to update whenever evidence status changed, together with safeguards phrased as standing obligations, turning a project's context into a defensive run log within days, twice, after cleanups that left those rules in place. The always-read route, the starter, and the practice core therefore ask for current state, and the core's every-level safeguards are met by acting rather than by stating them. No findings, decision, or run-record document type ships: the rule carries the lesson without a taxonomy.
+Context records current state, rewritten in place. A record that gains an entry per run is a log: run detail belongs beside the outputs, written by the code that produced them, and narrative belongs in Git. Permission given in conversation, and statements of what stayed unchanged or did not happen, belong in neither. Real use (T2) showed an always-read rule to update whenever evidence status changed, together with safeguards phrased as standing obligations, turning a project's context into a defensive run log within days, twice, after cleanups that left those rules in place. The always-read route, the starter, and the practice core therefore ask for current state, and the core's every-level safeguards are met by acting rather than by stating them. No findings, decision, or run-record document type ships: the rule carries the lesson without a taxonomy. The same holds for proposals awaiting a decision: T2 gathered them into one page, which removed most hedging from its adopted pages, so the starter asks for that without shipping a document type for it.
 
 Successful initialization presents the same bounded command inventory through two entry points: the human/machine operation report and installed `AGENTS.md`. Discovery does not imply use. The public CLI consists of `init`, read-only `check`, and preview-first `sync-index`.
 
@@ -121,7 +125,7 @@ Agent Skills discovery is part of the starter contract. Current Codex and VS Cod
 
 Claude Code is the second primary target and reads no path under `.agents/`, so `--claude` adds one generated pointer per skill under `.claude/skills/`: the same description, and a body that routes to the canonical file. Claude Code reads `AGENTS.md` directly while the project has no `CLAUDE.md`, so the instruction file needs no second copy; where a `CLAUDE.md` exists, the report asks for an `@AGENTS.md` import line and never edits it. Two copies of a procedure would drift, so no procedure body is ever duplicated to reach a host, and a pointer that no longer agrees with its skill is reported. Apart from this bounded pointer, the CLI generates and manages no alternate skill root. Occupied canonical skills and occupied pointers remain project-owned and are not overwritten. Context documents are not skills: they retain visible `Purpose`, `Read when`, and `Update when` guidance rather than duplicating it into universal YAML metadata without a defined consumer and versioned schema.
 
-Generated context-index entries contain a path and, when complete, the bounded `Purpose`, `Read when`, and `Update when` values already present near the start of that source. Missing or malformed guidance stays visible as a structural warning and path-only route. The index remains a generated navigation projection; source documents remain authoritative.
+Generated index entries contain a relative link to the document and, when both are present, the bounded `Purpose` and `Read when` values near the start of that document. Missing or over-long guidance stays visible as a structural warning and a link-only entry. The index is generated navigation; the documents remain authoritative. Text a project adds to the index is reported, and `sync-index` stops rather than discard it, naming where the text should go instead.
 
 The ordinary user request may be “initialize this project with Scientific Project Context.” The caller first previews `spctx init . --dry-run`. The CLI installs safe missing files and reports the handoff; it defers a missing `AGENTS.md` when adding it would activate retained unreviewed practice or skill content. An agent inspects the workspace and its actual instruction surfaces, compares retained instructions with the project-context and scientific-practice contracts, proposes only the compact missing route for user review, and populates or refreshes `.context/project.md`. A scientist or domain reviewer resolves scientific meaning and claim scope; the relevant project or data authority resolves permitted change, use, and sharing. A human may execute the same mechanics and then hand the semantic steps to an agent.
 
@@ -185,7 +189,8 @@ packaged trigger categories from every skill description and nothing detected it
 | `.claude/skills/*/SKILL.md` | nothing; generated once from the skill it points at | everything, with `DH-SKILL-004` reporting disagreement |
 | `.context/scientific-practice.md` | the marked core | everything outside the markers |
 | `AGENTS.md` | the marked routing block | everything else |
-| `.context/project.md` and focused sources | nothing | everything |
+| `.context/index.md` | the whole file: the packaged heading, and a list generated from the documents | nothing; text added around the list is reported, never discarded |
+| `.context/project.md` and the other context documents | nothing | everything |
 
 `check` reports divergence in a tracked region as an observation, never as a
 verdict, and separates this project's own trigger phrasings from any other
@@ -223,10 +228,13 @@ signals were narrowed against real files before shipping, and the one real
 adopting project is the standing test for whether a check is quiet where it
 should be. Prefer a summary line to a finding wherever the project may honestly
 have nothing to do, so a settled project is never told about it twice.
-Two failures of this test are on record. The difference report counted project
+Three failures of this test are on record. The difference report counted project
 trigger tuning as drift, and the next trial removed the tuning to reach zero.
 The repeated-passage report first offered rewording as a resolution, which would
-have converted detectable repetition into undetectable paraphrase.
+have converted detectable repetition into undetectable paraphrase. The
+missing-path finding fired on gitignored inputs that exist only where the
+analysis runs, and a project rewrote a path as vaguer prose to clear it; the
+check now reads the project's `.gitignore` files instead.
 
 Use the report to name a project-owned choice and show its current state, and
 leave the decision to the project. State a measure's blind spot next to the
@@ -262,7 +270,7 @@ changes. Whether that becomes an irritation, and whether an inline exemption
 marker would be worth its ceremony, needs field evidence before anything is
 built.
 
-Generated inventory blocks, versioned managed blocks, fenced and inline code,
+The generated index, versioned managed blocks, fenced and inline code,
 and link targets are excluded because they repeat by design. The packaged
 instruction and project files are drafts a project is meant to edit, so they are
 not treated as reference text.
@@ -288,9 +296,9 @@ whether adoption changes behavior or quietly changes nothing.
 
 | Situation | What `init` does | What is absent afterwards | Main risk |
 | --- | --- | --- | --- |
-| Empty or new directory | Writes all six starter files | Nothing | Placeholders left unfilled still read as adopted |
+| Empty or new directory | Writes all seven starter files | Nothing | Placeholders left unfilled still read as adopted |
 | Existing repository, no instruction file | Writes the starter, including the instruction file | Nothing structural | As above |
-| Existing repository that already has `AGENTS.md` | Keeps it byte-for-byte and reports the routing block for a person to place | Every packaged instruction section except the route | An inert install: files present, day-to-day behavior unchanged |
+| Existing repository that already has `AGENTS.md` | Keeps it byte-for-byte, reports the routing block for a person to place, and prints the packaged file to offer sections from | Every packaged instruction section except the route | An inert install: files present, day-to-day behavior unchanged |
 | Existing repository with `.github/copilot-instructions.md` or a contributing guide, but no `AGENTS.md` | Writes `AGENTS.md` | Nothing structural | A second instruction file competing for authority, which nothing detects |
 | Skills or the practice contract present, instruction file missing | Defers the instruction file | The route | Deliberate: retained unreviewed content must not be activated |
 | Claude Code, with `--claude` | Adds a pointer per skill under `.claude/skills/` | Nothing, unless a `CLAUDE.md` exists | A `CLAUDE.md` silently displaces `AGENTS.md`, so the report names that case |

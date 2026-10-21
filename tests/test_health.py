@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -28,6 +29,21 @@ from scientific_project_context.resources import (  # noqa: E402
 
 
 FILESYSTEM_CATALOG = load_filesystem_resources(ROOT / "template")
+INDEX = ".context/index.md"
+
+
+def index_entry(path: str) -> str:
+    target = path.removeprefix(".context/")
+    return f"- [{target}]({target})\n"
+
+
+def hand_index(*lines: str) -> str:
+    return (
+        "# Context Index\n\n"
+        f"{health.CONTEXT_INVENTORY_BEGIN}\n"
+        + "".join(lines)
+        + f"{health.CONTEXT_INVENTORY_END}\n"
+    )
 
 
 def write_fixture_file(root: Path, relative: str, content: str = "# Fixture\n") -> None:
@@ -92,7 +108,9 @@ class CLIContractTests(unittest.TestCase):
             {"AGENTS.md", ".context/project.md", ".context/scientific-practice.md"},
             set(retrofit_plan.retained_files),
         )
-        self.assertEqual(set(AGENT_SKILL_PATHS), set(retrofit_plan.identical_files))
+        self.assertEqual(
+            {*AGENT_SKILL_PATHS, INDEX}, set(retrofit_plan.identical_files)
+        )
         self.assertEqual((), retrofit_plan.conflicts)
 
 
@@ -124,8 +142,16 @@ class LifecycleLayoutTests(unittest.TestCase):
                 relative,
                 (ROOT / "template" / relative).read_text(encoding="utf-8"),
             )
+        write_fixture_file(
+            root,
+            INDEX,
+            (ROOT / "template" / INDEX).read_text(encoding="utf-8"),
+        )
 
-    def test_lifecycle_scaffold_does_not_require_a_context_index(self) -> None:
+    def sync_index(self, root: Path) -> None:
+        apply_index_sync(plan_index_sync(FILESYSTEM_CATALOG, root))
+
+    def test_a_fresh_layout_has_a_current_empty_index(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.create_lifecycle_layout(root)
@@ -289,6 +315,8 @@ class LifecycleLayoutTests(unittest.TestCase):
 
             self.assertEqual(1, len(findings))
             self.assertEqual(health.NOTED, findings[0].severity)
+            # An upgrade follows this skill's own steps, so an old copy runs an old upgrade.
+            self.assertIn("before upgrading", findings[0].next_action)
 
     def test_untouched_packaged_skills_report_no_drift(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -444,30 +472,41 @@ class LifecycleLayoutTests(unittest.TestCase):
 
             self.assertEqual([], duplication)
 
-    def test_two_specialized_owners_without_context_index_get_warning(self) -> None:
+    def test_documents_added_after_the_index_are_reported_missing_from_it(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.create_lifecycle_layout(root)
             write_fixture_file(root, ".context/task-board.md")
-            write_fixture_file(root, ".context/active/pipeline-overview.md")
+            write_fixture_file(root, ".context/methods/pipeline-overview.md")
 
             findings: list[health.Finding] = []
             health.check_context_index_pressure(root, findings)
 
             self.assertEqual(["DH-ROUTE-002"], [finding.check_id for finding in findings])
             self.assertEqual(health.UNFINISHED, findings[0].severity)
-            self.assertIn("2 focused documents", findings[0].evidence)
+            self.assertIn(
+                "missing: .context/methods/pipeline-overview.md, .context/task-board.md",
+                findings[0].evidence,
+            )
 
-    def test_one_specialized_owner_does_not_require_context_index(self) -> None:
+    def test_a_single_document_is_listed_too(self) -> None:
+        """The index is the one list of context documents, from the first one on."""
+
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.create_lifecycle_layout(root)
-            write_fixture_file(root, ".context/task-board.md")
+            write_fixture_file(
+                root,
+                ".context/task-board.md",
+                "# Tasks\n\nPurpose: track work.\nRead when: planning.\nUpdate when: work changes.\n",
+            )
 
             findings: list[health.Finding] = []
             health.check_context_index_pressure(root, findings)
+            self.assertEqual(["DH-ROUTE-002"], [finding.check_id for finding in findings])
 
-            self.assertEqual([], findings)
+            self.sync_index(root)
+            self.assertEqual((), project_findings(root))
 
     def test_generated_context_inventory_is_parsed_and_checked(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -475,17 +514,7 @@ class LifecycleLayoutTests(unittest.TestCase):
             self.create_lifecycle_layout(root)
             owner = ".context/active/method-validation.md"
             write_fixture_file(root, owner)
-            write_fixture_file(
-                root,
-                ".context/README.md",
-                "# Context Index\n\n"
-                "Purpose: route current fixture context.\n"
-                "Read when: selecting additional fixture context.\n"
-                "Update when: current fixture sources change.\n\n"
-                f"{health.CONTEXT_INVENTORY_BEGIN}\n"
-                f"- `{owner}`\n"
-                f"{health.CONTEXT_INVENTORY_END}\n",
-            )
+            write_fixture_file(root, INDEX, hand_index(index_entry(owner)))
 
             findings: list[health.Finding] = []
             active = health.parse_context_index(root, findings)
@@ -499,7 +528,7 @@ class LifecycleLayoutTests(unittest.TestCase):
             self.create_lifecycle_layout(root)
             write_fixture_file(
                 root,
-                ".context/README.md",
+                INDEX,
                 f"# Context Index\n\n{health.CONTEXT_INVENTORY_BEGIN}\n",
             )
 
@@ -509,16 +538,16 @@ class LifecycleLayoutTests(unittest.TestCase):
             self.assertEqual(["DH-ROUTE-001"], [finding.check_id for finding in findings])
             self.assertEqual(health.BROKEN, findings[0].severity)
 
-    def test_human_authored_context_index_without_generated_markers_is_a_warning(self) -> None:
+    def test_an_index_without_a_generated_list_is_broken(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.create_lifecycle_layout(root)
             write_fixture_file(
                 root,
-                ".context/README.md",
+                INDEX,
                 "# Context Index\n\n"
-                "- `.context/project.md`\n"
-                "- `.context/method-validation.md`\n",
+                "- [project.md](project.md)\n"
+                "- [method-validation.md](method-validation.md)\n",
             )
 
             findings: list[health.Finding] = []
@@ -526,8 +555,66 @@ class LifecycleLayoutTests(unittest.TestCase):
 
             self.assertEqual([], active)
             self.assertEqual(["DH-ROUTE-001"], [finding.check_id for finding in findings])
-            self.assertEqual(health.UNFINISHED, findings[0].severity)
-            self.assertIn("human-authored", findings[0].message.lower())
+            self.assertEqual(health.BROKEN, findings[0].severity)
+            self.assertIn("no valid generated list", findings[0].message)
+
+    def test_text_around_the_generated_list_is_reported(self) -> None:
+        """A hand-kept list beside the generated one is the drift this index exists to stop."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.create_lifecycle_layout(root)
+            index = root / INDEX
+            index.write_text(
+                index.read_text(encoding="utf-8") + "\n- [Methods](methods.md): the method.\n",
+                encoding="utf-8",
+            )
+
+            findings = project_findings(root)
+
+            self.assertEqual(["DH-ROUTE-006"], [finding.check_id for finding in findings])
+            differences = health.diff_managed_regions(FILESYSTEM_CATALOG, root)
+            self.assertEqual(["heading"], [difference.region for difference in differences])
+            self.assertIn("+- [Methods](methods.md)", differences[0].diff)
+
+    def test_an_index_heading_from_an_earlier_package_is_stale_not_foreign(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.create_lifecycle_layout(root)
+            packaged = (ROOT / "template" / INDEX).read_text(encoding="utf-8")
+            earlier = packaged.replace(
+                "Purpose: list every context document", "Purpose: list each context document"
+            )
+            write_fixture_file(root, INDEX, earlier)
+            digest = hashlib.sha256(
+                project.context_index_frame(earlier).encode("utf-8")
+            ).hexdigest()
+
+            with mock.patch.object(project, "EARLIER_CONTEXT_INDEX_FRAMES", frozenset({digest})):
+                findings = project_findings(root)
+                self.assertEqual(["DH-ROUTE-002"], [finding.check_id for finding in findings])
+
+                self.sync_index(root)
+                self.assertEqual(
+                    packaged.encode("utf-8"),
+                    (root / INDEX).read_bytes().replace(b"\r\n", b"\n"),
+                )
+                self.assertEqual((), project_findings(root))
+
+    def test_a_readme_at_the_context_root_is_reported_and_never_listed(self) -> None:
+        """It would compete with `project.md` as the place to start."""
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.create_lifecycle_layout(root)
+            write_fixture_file(root, ".context/README.md", "# Start here\n")
+
+            findings = project_findings(root)
+
+            self.assertEqual(["DH-ROUTE-007"], [finding.check_id for finding in findings])
+            self.assertNotIn(
+                ".context/README.md", health.discover_specialized_owners(root).owners
+            )
 
     def test_generated_context_index_rejects_noncanonical_inventory_content(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -536,28 +623,27 @@ class LifecycleLayoutTests(unittest.TestCase):
             write_fixture_file(root, ".context/task-board.md")
             write_fixture_file(
                 root,
-                ".context/README.md",
-                "# Context Index\n\n"
-                f"{health.CONTEXT_INVENTORY_BEGIN}\n"
-                "- `.context/task-board.md`\n"
-                "Hand-written note inside the generated block.\n"
-                f"{health.CONTEXT_INVENTORY_END}\n",
+                INDEX,
+                hand_index(
+                    index_entry(".context/task-board.md"),
+                    "Hand-written note inside the generated block.\n",
+                ),
             )
 
             findings: list[health.Finding] = []
             health.parse_context_index(root, findings)
 
             self.assertEqual(["DH-ROUTE-001"], [finding.check_id for finding in findings])
-            self.assertIn("non-canonical", findings[0].message)
+            self.assertIn("edited by hand", findings[0].message)
 
     def test_generated_context_index_rejects_unsafe_paths_without_dereferencing_them(self) -> None:
         cases = (
             "../outside.md",
             "/absolute/outside.md",
             "C:/outside.md",
-            ".context/active/../task-board.md",
-            ".context\\active\\owner.md",
-            ".context/active",
+            "active/../task-board.md",
+            "active\\owner.md",
+            "active",
         )
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
@@ -565,14 +651,7 @@ class LifecycleLayoutTests(unittest.TestCase):
                 with self.subTest(path=unsafe):
                     root = base / str(index)
                     self.create_lifecycle_layout(root)
-                    write_fixture_file(
-                        root,
-                        ".context/README.md",
-                        "# Context Index\n\n"
-                        f"{health.CONTEXT_INVENTORY_BEGIN}\n"
-                        f"- `{unsafe}`\n"
-                        f"{health.CONTEXT_INVENTORY_END}\n",
-                    )
+                    write_fixture_file(root, INDEX, hand_index(f"- [{unsafe}]({unsafe})\n"))
 
                     findings = project_findings(root)
 
@@ -594,12 +673,7 @@ class LifecycleLayoutTests(unittest.TestCase):
             except OSError as exc:
                 self.skipTest(f"symlink creation is unavailable: {exc}")
             write_fixture_file(
-                root,
-                ".context/README.md",
-                "# Context Index\n\n"
-                f"{health.CONTEXT_INVENTORY_BEGIN}\n"
-                "- `.context/active/linked-owner.md`\n"
-                f"{health.CONTEXT_INVENTORY_END}\n",
+                root, INDEX, hand_index(index_entry(".context/active/linked-owner.md"))
             )
 
             findings = project_findings(root)
@@ -642,12 +716,7 @@ class LifecycleLayoutTests(unittest.TestCase):
                     if name == "order":
                         inventory = list(reversed(expected))
                     write_fixture_file(
-                        root,
-                        ".context/README.md",
-                        "# Context Index\n\n"
-                        f"{health.CONTEXT_INVENTORY_BEGIN}\n"
-                        + "".join(f"- `{path}`\n" for path in inventory)
-                        + f"{health.CONTEXT_INVENTORY_END}\n",
+                        root, INDEX, hand_index(*(index_entry(path) for path in inventory))
                     )
 
                     findings: list[health.Finding] = []
@@ -663,14 +732,7 @@ class LifecycleLayoutTests(unittest.TestCase):
             write_fixture_file(root, ".context/task-board.md")
             write_fixture_file(root, ".context/active/data-dictionary.md")
             owners = health.discover_specialized_owners(root).owners
-            write_fixture_file(
-                root,
-                ".context/README.md",
-                "# Context Index\n\n"
-                f"{health.CONTEXT_INVENTORY_BEGIN}\n"
-                + "".join(f"- `{path}`\n" for path in owners)
-                + f"{health.CONTEXT_INVENTORY_END}\n",
-            )
+            write_fixture_file(root, INDEX, hand_index(*(index_entry(path) for path in owners)))
 
             findings: list[health.Finding] = []
             health.check_context_index_pressure(root, findings)
@@ -715,8 +777,8 @@ class LifecycleLayoutTests(unittest.TestCase):
             self.assertIn("read when", findings[0].evidence)
             self.assertIn("update when", findings[0].evidence)
 
-    def test_context_index_pressure_for_zero_one_and_two_owners(self) -> None:
-        paths = (".context/decision-register.md", ".context/active/method-validation.md")
+    def test_context_index_lists_every_document_from_the_first(self) -> None:
+        paths = (".context/decision-register.md", ".context/methods/method-validation.md")
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
             for count in range(3):
@@ -730,7 +792,7 @@ class LifecycleLayoutTests(unittest.TestCase):
                     health.check_context_index_pressure(root, findings)
 
                     self.assertEqual(
-                        ["DH-ROUTE-002"] if count >= 2 else [],
+                        ["DH-ROUTE-002"] if count else [],
                         [finding.check_id for finding in findings],
                     )
 
@@ -738,8 +800,12 @@ class LifecycleLayoutTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             self.create_lifecycle_layout(root)
-            active = root / ".context" / "active"
-            active.write_text("not a directory\n", encoding="utf-8")
+            outside = root / "outside"
+            outside.mkdir()
+            try:
+                (root / ".context" / "linked").symlink_to(outside, target_is_directory=True)
+            except OSError as exc:
+                self.skipTest(f"directory symlink creation is unavailable: {exc}")
 
             findings: list[health.Finding] = []
             health.check_context_index_pressure(root, findings)
@@ -757,13 +823,10 @@ class LifecycleLayoutTests(unittest.TestCase):
             write_fixture_file(root, ".context/task-board.md")
             real_index = root / "index-target.md"
             real_index.write_text(
-                "# Context Index\n\n"
-                f"{health.CONTEXT_INVENTORY_BEGIN}\n"
-                "- `.context/task-board.md`\n"
-                f"{health.CONTEXT_INVENTORY_END}\n",
-                encoding="utf-8",
+                hand_index(index_entry(".context/task-board.md")), encoding="utf-8"
             )
-            context_index = root / ".context" / "README.md"
+            context_index = root / INDEX
+            context_index.unlink()
             try:
                 context_index.symlink_to(real_index)
             except OSError as exc:
@@ -774,7 +837,7 @@ class LifecycleLayoutTests(unittest.TestCase):
             index_findings = [finding for finding in findings if finding.check_id == "DH-ROUTE-003"]
             self.assertEqual(1, len(index_findings))
             self.assertEqual(health.BROKEN, index_findings[0].severity)
-            self.assertEqual(".context/README.md", index_findings[0].path)
+            self.assertEqual(INDEX, index_findings[0].path)
 
     def test_non_owner_design_symlink_blocks_before_recursive_checks(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -906,11 +969,13 @@ class HealthBoundaryTests(unittest.TestCase):
 
 
 class DraftOwnerReviewTests(unittest.TestCase):
-    def test_current_draft_owner_is_reported_but_reference_copy_is_ignored(self) -> None:
+    def test_draft_marker_is_reported_in_any_folder_but_not_when_quoted(self) -> None:
+        """Everything under `.context/` is current context, so no folder is exempt."""
+
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             marker = f"**{health.DRAFT_CONTEXT_MARKER}**: review this context.\n"
-            write_fixture_file(root, ".context/active/method-validation.md", marker)
+            write_fixture_file(root, ".context/methods/method-validation.md", marker)
             write_fixture_file(
                 root,
                 ".context/MAINTENANCE.md",
@@ -921,8 +986,10 @@ class DraftOwnerReviewTests(unittest.TestCase):
             findings: list[health.Finding] = []
             health.check_draft_owners(root, findings)
 
-            self.assertEqual(["DH-REVIEW-001"], [finding.check_id for finding in findings])
-            self.assertEqual(".context/active/method-validation.md", findings[0].path)
+            self.assertEqual(
+                [".context/methods/method-validation.md", ".context/reference/example.md"],
+                [finding.path for finding in findings],
+            )
             self.assertEqual(health.UNFINISHED, findings[0].severity)
 
 

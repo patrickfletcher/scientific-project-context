@@ -13,8 +13,10 @@ from typing import Iterable, Iterator, Sequence
 from .project import (
     AGENT_SKILLS,
     CONTEXT_EMPTY_INVENTORY_LINE,
+    CONTEXT_GUIDANCE_MAX_CHARS,
     CONTEXT_INVENTORY_BEGIN,
     CONTEXT_INVENTORY_END,
+    CONTEXT_README_PATH,
     DRAFT_CONTEXT_MARKER,
     PROJECT_CONTEXT_PATH,
     SCIENTIFIC_PRACTICE_BEGIN,
@@ -29,15 +31,23 @@ from .project import (
     claude_skill_path,
     collect_context_guidance,
     compare_agent_skill,
+    context_index_frame,
+    context_index_frame_state,
     discover_specialized_owners,
     extract_context_guidance,
     extract_managed_block,
     managed_block_state,
     parse_agent_skill_content,
+    read_context_guidance_lines,
     rewrite_context_inventory,
     validate_agent_skill_content,
 )
-from .resources import ResourceCatalog, STARTER_INVENTORY, TEMPLATE_INVENTORY
+from .resources import (
+    CONTEXT_INDEX_PATH,
+    ResourceCatalog,
+    STARTER_INVENTORY,
+    TEMPLATE_INVENTORY,
+)
 
 
 # The skill tells agents to write the bare marker, so accept it with or without
@@ -48,7 +58,8 @@ DRAFT_CONTEXT_MARKER_RE = re.compile(
 )
 
 TEMPLATE_RESOURCE_TARGET = "resource-catalog:template"
-CONTEXT_GUIDANCE_LABELS = ("purpose", "read when", "update when")
+INVENTORY_ENTRY_RE = re.compile(r"- \[([^\]\n]+)\]\(([^)\s]+)\)")
+INVENTORY_SUMMARY_RE = re.compile(r"  - (?:Purpose|Read when): .+")
 
 DUPLICATE_MIN_WORDS = 12
 DUPLICATE_MAX_FINDINGS = 8
@@ -276,7 +287,7 @@ def parse_backtick_bullets(lines: Iterable[str]) -> list[str]:
 
 
 def is_safe_generated_owner_path(path_text: str) -> bool:
-    if "\\" in path_text:
+    if "\\" in path_text or ":" in path_text:
         return False
     path = PurePosixPath(path_text)
     return (
@@ -305,11 +316,7 @@ def _sorted_entries(directory: Path) -> tuple[os.DirEntry[str], ...]:
     return tuple(sorted(entries, key=lambda entry: (entry.name.casefold(), entry.name)))
 
 
-def _walk_plain_files(
-    root: Path,
-    *,
-    skip_directory_names: frozenset[str] = frozenset(),
-) -> Iterator[Path]:
+def _walk_plain_files(root: Path) -> Iterator[Path]:
     """Yield regular files in deterministic order without following links."""
 
     for entry in _sorted_entries(root):
@@ -321,12 +328,7 @@ def _walk_plain_files(
             continue
         path = Path(entry.path)
         if stat.S_ISDIR(entry_stat.st_mode):
-            if entry.name in skip_directory_names:
-                continue
-            yield from _walk_plain_files(
-                path,
-                skip_directory_names=skip_directory_names,
-            )
+            yield from _walk_plain_files(path)
         elif stat.S_ISREG(entry_stat.st_mode):
             yield path
 
@@ -394,7 +396,7 @@ def check_owned_tree_safety(root: Path, findings: list[Finding]) -> None:
                 None,
                 "Context and instruction folders must contain ordinary files, not links or unreadable entries.",
                 "; ".join(unsafe),
-                ".context/README.md",
+                CONTEXT_INDEX_PATH,
                 "Replace linked or unreadable entries with ordinary files.",
             )
         )
@@ -408,34 +410,19 @@ def parse_generated_context_index(
     begin_indexes = [i for i, line in enumerate(lines) if line == CONTEXT_INVENTORY_BEGIN]
     end_indexes = [i for i, line in enumerate(lines) if line == CONTEXT_INVENTORY_END]
 
-    if not begin_indexes and not end_indexes:
-        findings.append(
-            Finding(
-                "DH-ROUTE-001",
-                UNFINISHED,
-                "routing",
-                ".context/README.md",
-                None,
-                "Context index is human-authored; no generated inventory markers were found.",
-                "begin markers: 0; end markers: 0; inventory consistency was not checked",
-                ".context/README.md",
-                "Keep writing the index by hand, or add one marker pair so `spctx sync-index` can maintain the inventory.",
-            )
-        )
-        return []
-
     if len(begin_indexes) != 1 or len(end_indexes) != 1 or begin_indexes[0] >= end_indexes[0]:
         findings.append(
             Finding(
                 "DH-ROUTE-001",
                 BROKEN,
                 "routing",
-                ".context/README.md",
+                CONTEXT_INDEX_PATH,
                 None,
-                "Context index does not contain one valid generated inventory marker pair.",
+                "The context index has no valid generated list, so it cannot be kept current.",
                 f"begin markers: {len(begin_indexes)}; end markers: {len(end_indexes)}",
-                ".context/README.md",
-                "Restore exactly one ordered generated context-inventory marker pair, then resynchronize the index.",
+                CONTEXT_INDEX_PATH,
+                "Move anything still needed to `.context/project.md` or another context "
+                f"document, delete `{CONTEXT_INDEX_PATH}`, and run `spctx sync-index .`.",
             )
         )
         return []
@@ -445,41 +432,26 @@ def parse_generated_context_index(
     region = lines[begin + 1 : end]
     paths: list[str] = []
     canonical = True
-    index = 0
-    if region == [CONTEXT_EMPTY_INVENTORY_LINE]:
-        index = len(region)
-    while index < len(region):
-        match = re.fullmatch(r"- `([^`]+)`", region[index])
-        if match is None:
-            canonical = False
-            break
-        paths.append(match.group(1))
-        index += 1
-        if index < len(region) and region[index].startswith("  - "):
-            expected_labels = ("Purpose", "Read when", "Update when")
-            for label in expected_labels:
-                if index >= len(region):
-                    canonical = False
-                    break
-                summary = re.fullmatch(rf"  - {re.escape(label)}: (.+)", region[index])
-                if summary is None:
-                    canonical = False
-                    break
-                index += 1
-            if not canonical:
+    if region != [CONTEXT_EMPTY_INVENTORY_LINE]:
+        for line in region:
+            entry = INVENTORY_ENTRY_RE.fullmatch(line)
+            if entry is not None and entry.group(1) == entry.group(2):
+                paths.append(f".context/{entry.group(2)}")
+            elif entry is not None or not paths or INVENTORY_SUMMARY_RE.fullmatch(line) is None:
+                canonical = False
                 break
-    if not canonical or index != len(region):
+    if not canonical:
         findings.append(
             Finding(
                 "DH-ROUTE-001",
                 BROKEN,
                 "routing",
-                ".context/README.md",
+                CONTEXT_INDEX_PATH,
                 begin + 2,
-                "Generated context inventory contains non-canonical content.",
-                "inventory entries must list either all three routing summaries or none",
-                ".context/README.md",
-                "Run `spctx sync-index`; your own prose outside the markers is left alone.",
+                "The generated list in the context index has been edited by hand.",
+                "lines other than document links and their Purpose and Read when lines",
+                CONTEXT_INDEX_PATH,
+                "Run `spctx sync-index .`; it rewrites the list from the documents themselves.",
             )
         )
         return []
@@ -490,11 +462,11 @@ def parse_generated_context_index(
                 "DH-ROUTE-001",
                 BROKEN,
                 "routing",
-                ".context/README.md",
+                CONTEXT_INDEX_PATH,
                 begin + 2,
                 "Generated context inventory contains an unsafe or non-canonical path.",
                 ", ".join(unsafe_paths),
-                ".context/README.md",
+                CONTEXT_INDEX_PATH,
                 "Remove escaping, absolute, non-Markdown, or non-canonical paths, then resync.",
             )
         )
@@ -521,7 +493,7 @@ def parse_context_index(root: Path, findings: list[Finding]) -> list[str]:
         )
         return []
 
-    context_index = root / ".context/README.md"
+    context_index = root / CONTEXT_INDEX_PATH
     context_index_link = _link_kind(context_index)
     if context_index_link is not None:
         findings.append(
@@ -529,7 +501,7 @@ def parse_context_index(root: Path, findings: list[Finding]) -> list[str]:
                 "DH-ROUTE-003",
                 BROKEN,
                 "routing",
-                ".context/README.md",
+                CONTEXT_INDEX_PATH,
                 None,
                 "The context index must be an ordinary file, not a link.",
                 f"context-index path is a {context_index_link}",
@@ -544,7 +516,7 @@ def parse_context_index(root: Path, findings: list[Finding]) -> list[str]:
                 "DH-ROUTE-003",
                 BROKEN,
                 "routing",
-                ".context/README.md",
+                CONTEXT_INDEX_PATH,
                 None,
                 "The context index must be a regular file.",
                 "context-index path is not a regular file",
@@ -613,7 +585,7 @@ def check_required(root: Path, findings: list[Finding]) -> None:
                     "Required template file is missing.",
                     "file not found",
                     required,
-                    "Restore the missing file from the template.",
+                    "Run `spctx init .`; it adds missing starter files and overwrites nothing.",
                 )
             )
 
@@ -689,6 +661,18 @@ def check_agent_skill_drift(
         )
 
     if comparison.body == "modified":
+        next_action = (
+            "Restore the packaged body and keep project facts in the instruction file or "
+            "`.context/`, or accept that this project now maintains this procedure itself."
+        )
+        if relative_path == agent_skill_path("spctx-project-context"):
+            # An upgrade follows this copy's own steps, so an old copy runs an old upgrade.
+            next_action = (
+                "Restore the packaged body from `spctx init . --dry-run` before upgrading, "
+                "and follow the upgrade steps in the restored copy: the steps in this one "
+                "belong to the version it came from. Keep project facts in the instruction "
+                "file or `.context/`."
+            )
         findings.append(
             Finding(
                 "DH-SKILL-003",
@@ -699,7 +683,7 @@ def check_agent_skill_drift(
                 "Agent Skill body differs from the packaged procedure, so package updates will not reach it.",
                 "body: modified",
                 relative_path,
-                "Restore the packaged body and keep project facts in the instruction file or `.context/`, or accept that this project now maintains this procedure itself.",
+                next_action,
             )
         )
 
@@ -939,23 +923,8 @@ def check_context_index_pressure(
         )
         return
 
-    context_index = root / ".context/README.md"
+    context_index = root / CONTEXT_INDEX_PATH
     if not context_index.exists():
-        if len(discovery.owners) < 2:
-            return
-        findings.append(
-            Finding(
-                "DH-ROUTE-002",
-                UNFINISHED,
-                "routing",
-                ".context/README.md",
-                None,
-                "Several context documents exist, but nothing indexes them.",
-                f"{len(discovery.owners)} focused documents: {', '.join(discovery.owners)}",
-                ".context/README.md",
-                "Run `spctx sync-index` to create the index and list these documents.",
-            )
-        )
         return
 
     if inventory is None:
@@ -967,7 +936,7 @@ def check_context_index_pressure(
         inventory = parsed
     elif any(
         finding.check_id in {"DH-ROUTE-001", "DH-ROUTE-003"}
-        and finding.path == ".context/README.md"
+        and finding.path == CONTEXT_INDEX_PATH
         for finding in findings
     ):
         return
@@ -1010,12 +979,90 @@ def check_context_index_pressure(
             "DH-ROUTE-002",
             UNFINISHED,
             "routing",
-            ".context/README.md",
+            CONTEXT_INDEX_PATH,
             None,
-            "Generated context inventory does not exactly match discoverable focused documents.",
+            "The context index does not list exactly the documents under `.context/` as they now read.",
             "; ".join(details),
-            ".context/README.md",
-            "Run `spctx sync-index`; your own routing notes are left alone.",
+            CONTEXT_INDEX_PATH,
+            "Run `spctx sync-index .`; the list is generated from the documents themselves.",
+        )
+    )
+
+
+def check_context_index_frame(
+    catalog: ResourceCatalog,
+    root: Path,
+    findings: list[Finding],
+) -> None:
+    """Report an index that holds anything besides the packaged heading and the list.
+
+    The index is the one list of context documents. Text a project adds around
+    the generated list is usually a second, hand-kept list, which drifts.
+    """
+
+    context_index = root / CONTEXT_INDEX_PATH
+    if not context_index.is_file() or any(
+        finding.check_id in {"DH-ROUTE-001", "DH-ROUTE-003"} for finding in findings
+    ):
+        return
+    try:
+        state = context_index_frame_state(
+            context_index.read_bytes(), _catalog_content(catalog, CONTEXT_INDEX_PATH)
+        )
+    except (OSError, KeyError):
+        return
+    if state == "earlier" and not any(
+        finding.check_id == "DH-ROUTE-002" for finding in findings
+    ):
+        findings.append(
+            Finding(
+                "DH-ROUTE-002",
+                UNFINISHED,
+                "routing",
+                CONTEXT_INDEX_PATH,
+                None,
+                "The context index still has the heading an earlier package version wrote.",
+                "index heading: earlier packaged version",
+                CONTEXT_INDEX_PATH,
+                "Run `spctx sync-index .`; it replaces the heading and regenerates the list.",
+            )
+        )
+    elif state == "own":
+        findings.append(
+            Finding(
+                "DH-ROUTE-006",
+                UNFINISHED,
+                "routing",
+                CONTEXT_INDEX_PATH,
+                None,
+                "The context index holds text besides the packaged heading and the generated list, which can drift from the documents it describes.",
+                "index heading: differs from the packaged one",
+                CONTEXT_INDEX_PATH,
+                "Move anything still needed to `.context/project.md` or another context document, "
+                f"delete `{CONTEXT_INDEX_PATH}`, and run `spctx sync-index .`; "
+                "`spctx check . --diff` shows the difference.",
+            )
+        )
+
+
+def check_context_readme(root: Path, findings: list[Finding]) -> None:
+    """Report a README at the context root, which would compete as a place to start."""
+
+    if not (root / CONTEXT_README_PATH).is_file():
+        return
+    findings.append(
+        Finding(
+            "DH-ROUTE-007",
+            UNFINISHED,
+            "routing",
+            CONTEXT_README_PATH,
+            None,
+            "A README at the root of `.context/` competes with `project.md` as the place to "
+            "start and with `index.md` as the list of documents, and is not listed.",
+            "file present",
+            ".context/project.md",
+            "Move anything still needed to `.context/project.md` or another context document, "
+            "then delete it.",
         )
     )
 
@@ -1027,24 +1074,32 @@ def check_context_guidance(root: Path, findings: list[Finding]) -> None:
     if discovery.conflicts:
         return
     paths = [".context/project.md", *discovery.owners]
-    if (root / ".context/README.md").is_file():
-        paths.insert(1, ".context/README.md")
+    if (root / CONTEXT_INDEX_PATH).is_file():
+        paths.insert(1, CONTEXT_INDEX_PATH)
 
     for path_text in paths:
         path = root / path_text
         if not path.is_file():
             continue
-        guidance = extract_context_guidance(read_text(path), path_text)
+        lines = read_context_guidance_lines(read_text(path))
         missing = [
-            label
-            for label, value in zip(
-                CONTEXT_GUIDANCE_LABELS,
-                (guidance.purpose, guidance.read_when, guidance.update_when),
-            )
-            if value is None
+            label.casefold() for label, value in lines.items() if value is None
         ]
-        if not missing:
+        too_long = [
+            f"{label} ({len(value)})"
+            for label, value in lines.items()
+            if value is not None and len(value) > CONTEXT_GUIDANCE_MAX_CHARS
+        ]
+        if not missing and not too_long:
             continue
+        details: list[str] = []
+        if missing:
+            details.append("missing near the start: " + ", ".join(missing))
+        if too_long:
+            details.append(
+                f"over {CONTEXT_GUIDANCE_MAX_CHARS} characters, so the index cannot "
+                "use them: " + ", ".join(too_long)
+            )
         findings.append(
             Finding(
                 "DH-GUIDE-001",
@@ -1052,12 +1107,18 @@ def check_context_guidance(root: Path, findings: list[Finding]) -> None:
                 "routing",
                 path_text,
                 None,
-                "Context document is missing its short routing lines.",
-                "missing near the start: " + ", ".join(missing),
+                (
+                    "Context document is missing its short routing lines."
+                    if missing
+                    else "Context document's routing lines are too long to index."
+                ),
+                "; ".join(details),
                 path_text,
                 (
                     "Add short Purpose, Read when, and Update when lines near the start "
                     "so readers can tell what this document is for."
+                    if missing
+                    else "Shorten each to a sentence or two; the index copies them as written."
                 ),
             )
         )
@@ -1067,10 +1128,7 @@ def check_draft_owners(root: Path, findings: list[Finding]) -> None:
     design_root = root / ".context"
     if not design_root.exists() or not design_root.is_dir():
         return
-    for path in _walk_plain_files(
-        design_root,
-        skip_directory_names=frozenset({"archived", "examples", "reference"}),
-    ):
+    for path in _walk_plain_files(design_root):
         if path.suffix.casefold() != ".md":
             continue
         path_text = rel(path, root)
@@ -1086,6 +1144,105 @@ def check_draft_owners(root: Path, findings: list[Finding]) -> None:
             )
 
 
+def _gitignore_regex(pattern: str) -> str:
+    """Translate one gitignore glob into a regular expression over POSIX paths."""
+
+    parts: list[str] = []
+    index = 0
+    while index < len(pattern):
+        if pattern.startswith("**/", index):
+            parts.append("(?:.*/)?")
+            index += 3
+        elif pattern.startswith("/**", index) and index + 3 == len(pattern):
+            parts.append("/.*")
+            index += 3
+        elif pattern.startswith("**", index):
+            parts.append(".*")
+            index += 2
+        elif pattern[index] == "*":
+            parts.append("[^/]*")
+            index += 1
+        elif pattern[index] == "?":
+            parts.append("[^/]")
+            index += 1
+        elif pattern[index] == "[" and pattern.find("]", index + 2) > 0:
+            end = pattern.find("]", index + 2)
+            body = pattern[index + 1 : end]
+            if body.startswith("!"):
+                body = "^" + body[1:]
+            parts.append("[" + body.replace("\\", "\\\\") + "]")
+            index = end + 1
+        else:
+            parts.append(re.escape(pattern[index]))
+            index += 1
+    return "".join(parts)
+
+
+def _gitignore_rules(directory: Path) -> list[tuple[bool, bool, bool, re.Pattern[str]]]:
+    """Read one directory's .gitignore as (negated, directory_only, anchored, regex) rules."""
+
+    path = directory / ".gitignore"
+    if _link_kind(path) is not None or not path.is_file():
+        return []
+    try:
+        text = read_text(path)
+    except (OSError, UnicodeError):
+        return []
+    rules: list[tuple[bool, bool, bool, re.Pattern[str]]] = []
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if not line or line.startswith("#"):
+            continue
+        negated = line.startswith("!")
+        if negated:
+            line = line[1:]
+        if line.startswith("\\"):
+            line = line[1:]
+        directory_only = line.endswith("/")
+        line = line.rstrip("/")
+        if not line:
+            continue
+        anchored = "/" in line
+        try:
+            regex = re.compile(_gitignore_regex(line.lstrip("/")))
+        except re.error:
+            continue
+        rules.append((negated, directory_only, anchored, regex))
+    return rules
+
+
+def _is_gitignored(root: Path, candidate: str) -> bool:
+    """Apply the repository's .gitignore files to one relative path, as Git would.
+
+    Only `.gitignore` files inside the project are read; per-clone and global
+    excludes are not, and no directory link is followed.
+    """
+
+    parts = PurePosixPath(candidate).parts
+    rules_by_depth: list[list[tuple[bool, bool, bool, re.Pattern[str]]]] = []
+    directory: Path | None = root
+    for part in parts:
+        if directory is not None and _link_kind(directory) is not None:
+            directory = None
+        rules_by_depth.append(_gitignore_rules(directory) if directory is not None else [])
+        directory = directory / part if directory is not None else None
+
+    # An ignored directory cannot have anything below it re-included.
+    for end in range(1, len(parts) + 1):
+        is_directory = end < len(parts)
+        ignored = False
+        for depth in range(end):
+            relative = "/".join(parts[depth:end])
+            for negated, directory_only, anchored, regex in rules_by_depth[depth]:
+                if directory_only and not is_directory:
+                    continue
+                if regex.fullmatch(relative if anchored else parts[end - 1]):
+                    ignored = not negated
+        if ignored:
+            return True
+    return False
+
+
 def check_stale_references(root: Path, findings: list[Finding]) -> None:
     """Report context that points at a repository path which is no longer there.
 
@@ -1094,22 +1251,20 @@ def check_stale_references(root: Path, findings: list[Finding]) -> None:
     file path are considered, so ratios, globs, URLs, and prose survive untouched.
     A path is only missing if the directory it sits under exists, because a
     reference into a tree the project does not have is describing a possibility
-    rather than pointing at something.
+    rather than pointing at something. A path the repository ignores is skipped
+    too: it may exist only on the machine where the analysis runs.
     """
 
     design_root = root / ".context"
     if not design_root.is_dir():
         return
     reported = 0
-    for path in _walk_plain_files(
-        design_root,
-        skip_directory_names=frozenset({"archived", "examples", "reference"}),
-    ):
+    for path in _walk_plain_files(design_root):
         if path.suffix.casefold() != ".md":
             continue
         # The index routes to documents that may not exist yet, and its generated
         # half is maintained by sync-index and checked by the routing checks.
-        if rel(path, root) == ".context/README.md":
+        if rel(path, root) == CONTEXT_INDEX_PATH:
             continue
         try:
             text = FENCED_CODE_RE.sub("", read_text(path))
@@ -1124,6 +1279,8 @@ def check_stale_references(root: Path, findings: list[Finding]) -> None:
                 if ".." in candidate or (root / candidate).exists():
                     continue
                 if not (root / PurePosixPath(candidate).parts[0]).is_dir():
+                    continue
+                if _is_gitignored(root, candidate):
                     continue
                 seen.add(candidate)
                 if reported >= STALE_REFERENCE_MAX_FINDINGS:
@@ -1158,6 +1315,8 @@ def _project_findings(
     check_claude_skill_pointers(root, findings)
     active = parse_context_index(root, findings)
     check_context_index_pressure(root, findings, active)
+    check_context_index_frame(catalog, root, findings)
+    check_context_readme(root, findings)
     discovery = discover_specialized_owners(root)
     if discovery.conflicts or tuple(active) != discovery.owners:
         active = []
@@ -1363,6 +1522,24 @@ def diff_managed_regions(
     root = _canonical_project_target(target)
     differences: list[ManagedDifference] = []
 
+    context_index = root / CONTEXT_INDEX_PATH
+    if context_index.is_file():
+        packaged_frame = context_index_frame(
+            _catalog_content(validated_catalog, CONTEXT_INDEX_PATH)
+        )
+        installed_frame = context_index_frame(read_text(context_index))
+        if packaged_frame is not None and installed_frame not in {None, packaged_frame}:
+            differences.append(
+                ManagedDifference(
+                    path=CONTEXT_INDEX_PATH,
+                    region="heading",
+                    state="diverged",
+                    diff=_region_diff(
+                        packaged_frame, str(installed_frame), f"{CONTEXT_INDEX_PATH}:heading"
+                    ),
+                )
+            )
+
     agents = root / "AGENTS.md"
     if agents.is_file():
         state, block = extract_managed_block(
@@ -1476,11 +1653,9 @@ def _duplicate_regions(
 
     context_root = root / ".context"
     if context_root.is_dir():
-        for path in _walk_plain_files(
-            context_root,
-            skip_directory_names=frozenset({"archived", "examples", "reference"}),
-        ):
-            if path.suffix.casefold() != ".md":
+        for path in _walk_plain_files(context_root):
+            # The index is generated, so it repeats by design, like the blocks above.
+            if path.suffix.casefold() != ".md" or rel(path, root) == CONTEXT_INDEX_PATH:
                 continue
             regions.append((rel(path, root), _comparable_words(read_text(path)), False))
 

@@ -47,7 +47,7 @@ prose.
 
 ## 3. Write Only From Confirmed Facts
 
-Draft from `.context/project.md`, its focused sources, the code, and existing
+Draft from `.context/project.md`, the context documents its index lists, the code, and existing
 public documentation. Do not infer a result, a number, or a mechanism that the
 project does not state.
 
@@ -105,7 +105,7 @@ change. Before finishing:
 If a described behavior turns out to be wrong rather than merely stale, that is a
 scientific or implementation finding, not a wording problem. Report it.
 
-## 7. Leave Judgment With Its Owner
+## 7. Leave Judgment to the People Responsible
 
 Draft, but do not decide. The following remain review-required until the
 responsible person confirms them:
