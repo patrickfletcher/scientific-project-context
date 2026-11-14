@@ -23,7 +23,7 @@ publication readiness.
 
 | Command | Role | Boundary |
 | --- | --- | --- |
-| `spctx init` | Infer new/retrofit mode, install the exact seven-file starter including three canonical Agent Skills and an index listing any context documents already present, optionally add `.claude/skills/` pointer skills with `--claude`, retain occupied regular files, and report the activation and semantic handoff. | Never overwrites or merges project instructions or occupied skills and never initializes scientific meaning; unsafe structure blocks. |
+| `spctx init` | Infer new/retrofit mode, install the exact eight-file starter including four canonical Agent Skills and an index listing any context documents already present, optionally add `.claude/skills/` pointer skills with `--claude`, retain occupied regular files, and report the activation and semantic handoff. | Never overwrites or merges project instructions or occupied skills and never initializes scientific meaning; unsafe structure blocks. |
 | `spctx check` | Report starter integrity, scientific-practice core integrity, Agent Skill structure, pointer-skill agreement, context-index integrity, review markers, and compact routing guidance. | Read-only; does not judge project meaning, prose adequacy, or repository organization. |
 | `spctx sync-index` | Regenerate `.context/index.md`: the packaged heading, then a link to every Markdown file under `.context/` with the `Purpose` and `Read when` lines from its top. | Derives entries only from current regular UTF-8 files; never discards text a project added to the index, and stops with instructions instead. |
 
@@ -57,7 +57,7 @@ body that routes to the canonical file. Pointers follow every rule the starter
 files follow: previewable, exclusive creation, never overwritten. No procedure
 body is ever duplicated, and `DH-SKILL-004` reports a pointer whose description
 or route no longer agrees with its skill. Apart from this bounded pointer, no
-alternate skill root or second procedure location is generated or managed.
+alternate skill root or second procedure location is generated or managed. When a project has pointers for some packaged skills but not all, `DH-SKILL-005` reports the missing one, because a skill a newer version ships gets no pointer until `init --claude` runs again.
 
 `.context/index.md` is generated, not project-owned. `init` writes it like any
 starter file, with the documents already present listed, and `sync-index`
@@ -106,6 +106,28 @@ An adopting project's older block reads as modified, which `check --diff` shows
 and the `upgrade` mode replaces; its practice core reads the same way until
 restored.
 
+dev26 rewrote the block again, still as v1. Every trial project had written an
+exploratory-by-default section by hand, and the block is the only shipped text
+every project reads and an upgrade replaces in the instruction file, so the
+exploratory default, the side-investigation guard, and the ask-once rule for
+protected inputs moved into it. It names all four skills by path, because a host
+without native skill discovery reaches them only through it. At about 270 words
+it is longer than before; each trial's own override was 150 to 250 words, and
+the upgrade asks projects to delete the restatement.
+
+## Earlier Package Text
+
+`history.py` holds the SHA-256 of the routing block, the practice core, and each
+skill body as every release from 0.1.0.dev22 shipped them, taken from this
+repository's release commits. When a tracked region matches one exactly, `check`
+names that version: `DH-PRACTICE-001` becomes `unfinished` with an upgrade
+message instead of `broken`, `DH-ROUTE-004` and `DH-SKILL-003` name the version,
+and the state carries `earlier_package_text`, rendered as one summary line. This
+separates a project that has not upgraded, or a branch that merged an older
+copy, from a project that edited a tracked region. Add each release's digests
+when it ships; earlier versions are not recorded, so their text still reads as
+modified.
+
 ## Report Scope
 
 Setup state appears in `check` as summary lines, not findings: whether the route
@@ -121,7 +143,10 @@ are held still for the trials.
 The context-adoption block appears only in the `init` report, where activation
 is the subject. When `init` keeps an `AGENTS.md` that differs from the packaged
 one, the block carries the packaged file as `packaged_agents_file`, so retrofit
-and upgrade can offer its sections in the packaged wording. Human `check` output
+and upgrade can offer its sections in the packaged wording. When it keeps a
+practice file whose text above the core differs, it carries
+`packaged_practice_file` for the same reason: that preamble is the project's,
+so only an offered change reaches it. Human `check` output
 carries the state lines, observations, each repeated pair among the project's
 own documents, and the validation boundary; resource and skill digests stay in
 `--json`.
@@ -132,8 +157,11 @@ without a defined consumer, schema, or validation boundary.
 Portable standard-library replacement cannot promise an absolute adversarial
 compare-and-swap boundary across the final filesystem call.
 
-Health checks do not follow linked targets or treat prose heuristics as proof of
-semantic adequacy. They verify only the required starter structure, exact
+Health checks do not follow links or treat prose heuristics as proof of
+semantic adequacy. `DH-LINK-001` tests only whether the file a Markdown link in
+`.context/` or `AGENTS.md` names exists, by lexical path, skipping URLs,
+anchors, paths outside the project, ignored paths, and lines that point into Git
+history; it never opens the target or checks anchors. They verify only the required starter structure, exact
 scientific-core and project-context routing blocks, Agent Skill structure,
 pointer-skill agreement, an index that lists exactly the documents present and
 holds nothing else, review markers, compact
@@ -145,7 +173,9 @@ agent routing, and natural-language compatibility remain distinct report states.
 ## Drift and State Signals
 
 `DH-STALE-001` warns when a `.context/` document backticks a repository-relative
-path that is not present. It is the only drift signal available to a read-only
+path that is not present. A line that points into Git history, such as "at commit
+`a882412`" or a `git show` command, is skipped: T2 used exactly that form for
+retired files, which the retire procedure recommends. It is the only drift signal available to a read-only
 structural tool, so it is deliberately narrow: the string must look like a path
 with a directory and a file extension, and its top-level directory must exist,
 because a reference into a tree the project does not have is describing a
@@ -167,7 +197,9 @@ answered. It is a summary line and never a finding, because a project that has
 settled its contract must not be told about it on every run.
 
 `relied_on` reads one field of the compact context, `What later work relies on`,
-and reports whether it names anything. That field is what decides how much
+and reports whether it names anything. A first sentence that opens with
+"nothing" or "none" and makes no exception names nothing; T4's "nothing is
+frozen. Only the user freezes…" had been reported as named. That field is what decides how much
 evidence a change owes, and its default is empty, so every project starts
 exploratory and stays there until someone decides otherwise. An earlier
 `stated_levels` grepped the whole file for the three level names instead; it
@@ -177,7 +209,8 @@ gives promotion a moment a person can act on. It is a state line, never a
 finding: an empty list is the correct state for most projects most of the time.
 
 `starter_prompts` counts bracketed prompts still present in `AGENTS.md` and
-`.context/project.md`. The starter says a prompt left in place is not an answer,
+`.context/project.md`, after removing inline code: T4's command syntax such as
+`[--input <name>]` was counted as five unanswered prompts. The starter says a prompt left in place is not an answer,
 so the count is the cheapest signal that setup is unfinished. It says nothing
 about the quality of the answers already written.
 
@@ -202,7 +235,7 @@ structure as approval, and the aggregate hid the individual signals that are
 actually actionable. Tuning trigger phrasings, in particular, is the outcome the
 system wants and was previously reported as divergence from the packaged text.
 
-The report is at schema 15. Instruction files other than `AGENTS.md` and
+The report is at schema 16. Instruction files other than `AGENTS.md` and
 `CLAUDE.md` are preserved but are not yet inspected or certified as discoverable
 by the CLI.
 
@@ -239,7 +272,7 @@ remain outside the machine-checked result.
 
 ## Resource and Interface Boundary
 
-The installed package contains one Markdown collection: the seven starter files
+The installed package contains one Markdown collection: the eight starter files
 `init` places into a project, of which only `sync-index` rewrites
 `.context/index.md` afterward. The package ships no example documents; people and agents create or
 reuse the clearest project-specific source when recurring detail justifies it.

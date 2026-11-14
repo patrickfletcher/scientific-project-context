@@ -9,7 +9,8 @@ Purpose: turn confirmed project facts into text a specific reader can use, witho
 Use when: writing or revising a README, user or contributor guide, methods or results text, figure or table caption, collaborator report, release notes, abstract, or manuscript section.
 
 Before acting, say that you are using `spctx-public-writing` and name the reader
-you are writing for. If you cannot name the reader, ask.
+you are writing for. If the reader is not clear, name the one you assume and
+continue; the user can correct it.
 
 ## 1. Name the Reader and What They Must Do
 
@@ -32,7 +33,7 @@ the same work.
 
 How much a sentence may claim depends on where the work actually is.
 `.context/scientific-practice.md` defines the levels and what each one owes:
-exploratory, supporting a decision or claim, and public or published. Read
+exploratory, relied on, and published. Read
 `.context/project.md` for current evidence and limits, then name the level the
 text is being written at.
 
@@ -52,6 +53,8 @@ public documentation. Do not infer a result, a number, or a mechanism that the
 project does not state.
 
 - Mark anything unconfirmed rather than smoothing it into the prose.
+- Cite only sources checked with `spctx-literature` at the depth the text
+  claims, and never a reference written from memory.
 - Do not restate a number the project has not recorded. If a count, tolerance,
   or effect size is needed and absent, ask or leave it explicitly open.
 - Prefer linking the source of a fact over copying it. Once a public document
@@ -105,10 +108,9 @@ change. Before finishing:
 If a described behavior turns out to be wrong rather than merely stale, that is a
 scientific or implementation finding, not a wording problem. Report it.
 
-## 7. Leave Judgment to the People Responsible
+## 7. Leave These Judgments to the User
 
-Draft, but do not decide. The following remain review-required until the
-responsible person confirms them:
+Draft, but do not decide. The user confirms:
 
 - claims, their strength, and their domain
 - authorship, credit, acknowledgement, and citation
@@ -116,12 +118,12 @@ responsible person confirms them:
 - ethics, consent, governance, and community permissions
 - support and maintenance commitments
 
-Keep generated public text visibly draft until the relevant facts and
-consequential judgments are confirmed. A clean repository, a passing pipeline,
-or a well-written paragraph does not make a claim true.
+Say in your reply which of these you drafted for the user to decide; a draft in
+progress needs no review marker. A clean repository, a passing pipeline, or a
+well-written paragraph does not make a claim true.
 
 ## 8. Report
 
 Say which reader you wrote for, which facts you used, what you marked as
-unconfirmed or draft, what you found stale or wrong, and which judgments still
-need the author's decision.
+unconfirmed, what you found stale or wrong, and which judgments still need the
+user's decision.

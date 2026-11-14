@@ -8,7 +8,7 @@ stands, and what is still undecided.
 
 It has three parts:
 
-- **Instructions and skills for agents.** `AGENTS.md` and three
+- **Instructions and skills for agents.** `AGENTS.md` and four
   [Agent Skills](https://agentskills.io/) (procedures an agent loads when a
   task calls for one) tell agents where the project's context lives, when to
   update it, and how to handle the moments that need more care.
@@ -40,6 +40,10 @@ out of the way.
 ```sh
 python -m pip install git+https://github.com/patrickfletcher/scientific-project-context.git
 ```
+
+If your project's environment is managed with `uv sync`, either install `spctx`
+in a separate environment or sync with `uv sync --inexact`: an exact sync
+removes packages the project doesn't declare.
 
 **2. Add the starter files to your project.** Preview first, then apply:
 
@@ -83,15 +87,19 @@ The context describes the project as it is now and relies on Git for its
 history. Keep logs of runs, changes, and approvals out of it: they bury the
 current answer, and Git already records what changed and when.
 
-Three skills cover the moments that need more care:
+Four skills cover the moments that need more care:
 
 - **`spctx-project-context`**: setting up the context, refreshing it when it
   falls behind, giving a growing topic its own document, or retiring one that's
   no longer useful.
-- **`spctx-scientific-change`**: changes that could alter a result, such as an
-  exclusion rule, a filter cutoff, or a model refit. It asks the agent to name
-  the main way the change could go wrong and, once something depends on the
-  result, the smallest check that would catch it.
+- **`spctx-scientific-change`**: changes to a result something already depends
+  on, or a result about to be published, such as an exclusion rule in the main
+  analysis or a model refit for the paper. It asks the agent to name the main
+  way the change could go wrong and the smallest check that would catch it.
+- **`spctx-literature`**: finding, checking, and citing outside sources such as
+  papers, datasets, and software. It asks the agent to look up each source
+  rather than cite it from memory, say what it actually read, and note the
+  conditions a published result holds under before the project uses it.
 - **`spctx-public-writing`**: text for readers outside the work, such as a
   README, a methods section, or a figure caption, drafted only from facts the
   project can support.
@@ -111,8 +119,9 @@ you want:
 
 Exploratory work stays light: the agent tells you in its reply what it did and
 that the result is provisional, and the context changes only when an answer
-does. Checks and evidence come due once a result starts to support a decision or
-a claim, or goes public.
+does. A result that later work depends on gets one check and a sentence on what
+it rests on. The strict standard, a public version of the work that reproduces
+a published result for anyone who runs it, applies only when you publish.
 
 ## What gets added
 
@@ -122,6 +131,7 @@ AGENTS.md                                          instructions for agents
 .context/project.md                                the project summary
 .context/scientific-practice.md                    the scientific-practice agreement
 .agents/skills/spctx-project-context/SKILL.md      set up and maintain the context
+.agents/skills/spctx-literature/SKILL.md           finding, checking, and citing sources
 .agents/skills/spctx-scientific-change/SKILL.md    changes that could affect a result
 .agents/skills/spctx-public-writing/SKILL.md       writing for readers outside the work
 ```
@@ -129,16 +139,17 @@ AGENTS.md                                          instructions for agents
 `project.md` starts as a set of prompts (purpose, current work, protected
 inputs, main risks, evidence, open questions) that the agent replaces with
 what's true for your project, marking what isn't known.
-`scientific-practice.md` is a general agreement on scientific practice: who
-decides what results mean, protecting raw and curated data, recording
-provenance and uncertainty, and not claiming more than the evidence supports.
+`scientific-practice.md` is a general agreement on scientific practice: you
+decide what results mean, raw and curated data stay protected, provenance and
+uncertainty get recorded, and nothing is claimed beyond what the evidence
+supports.
 Below its shared part is a section for your field's own standards, which your
 agent can draft from a protocol or reporting guideline you already follow.
 
 Beyond these, `.context/` is yours to organize, in whatever folders suit the
 project. When a topic outgrows the summary, such as a calibration procedure or a
-list of analysis decisions, an agent can give it its own document and mark it
-for review until you've confirmed it. `.context/index.md` links every document
+list of analysis decisions, an agent can give it its own document, marking any
+interpretation it drafted for you to confirm. `.context/index.md` links every document
 under `.context/` with a line on when to read it. It is generated: `spctx
 sync-index` rewrites it when documents are added, renamed, or removed, so don't
 edit it by hand or keep a second list elsewhere.
@@ -209,9 +220,9 @@ in as they come up; bigger changes wait until the feedback is in.
 This is an experimental prototype. It isn't on PyPI, and its commands and files
 may still change.
 
-- It has only been tested with CPython 3.10 and 3.11 on Windows. The rest of
-  the declared 3.10–3.14 range, macOS, and Linux are untested.
-- The design was shaped by uncontrolled use in one real scientific repository.
+- The test suite has passed with CPython 3.10 and 3.11 on Windows and 3.10
+  through 3.14 on Linux. macOS is untested.
+- The design was shaped by uncontrolled use in a few real repositories.
   Whether it makes projects easier to pick up, keeps agents on track, or
   improves reproducibility hasn't been established.
 - Whether agents choose the right skill without being told hasn't been tested

@@ -359,7 +359,7 @@ class LifecycleLayoutTests(unittest.TestCase):
                 for entry in health.inspect_skill_tuning(FILESYSTEM_CATALOG, root)
             }
             self.assertEqual({"untuned"}, set(states.values()))
-            self.assertEqual(3, len(states))
+            self.assertEqual(len(health.AGENT_SKILLS), len(states))
 
             self.write_tuned_skill(
                 root,

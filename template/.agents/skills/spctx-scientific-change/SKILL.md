@@ -1,6 +1,6 @@
 ---
 name: spctx-scientific-change
-description: Apply the project's scientific safeguards to work that could change a result, an interpretation, or a reported claim. Use when changing an analysis, filtering or exclusion rule, notebook, model or simulation, statistical or numerical method, acquisition or instrument workflow, calibration, scientific API, figure or table, or any output that supports a claim — for example "exclude these trials", "change the filter cutoff", "update the calibration", "refit the model", "redo the figure for the paper". Do not use for formatting, packaging, renaming, or routine maintenance with no scientific effect.
+description: Apply the project's scientific safeguards to a change that touches something later work relies on, or to a result about to be shared or published. Use when changing an analysis, filtering or exclusion rule, notebook, model or simulation, statistical or numerical method, acquisition or instrument workflow, calibration, scientific API, figure or table that the project's list of what later work relies on names, or when preparing results for a paper, poster, release, or handoff — for example "exclude these trials from the main analysis", "change the calibration we rely on", "refit the model for the paper", "redo the figure for the paper". Exploratory analysis needs no skill; the project's instructions cover it. Do not use for formatting, packaging, renaming, or routine maintenance.
 ---
 
 # Scientific Change
@@ -8,9 +8,10 @@ description: Apply the project's scientific safeguards to work that could change
 Purpose: plan, perform, and check scientifically material work without forcing a separate validation bureaucracy onto simple projects.
 Use when: creating or changing an analysis, data transformation or exclusion rule, notebook, model or simulation, numerical or statistical method, acquisition or instrument workflow, calibration, scientific API, figure or table, or any output that supports a reported claim.
 
-Before acting, say that you are using `spctx-scientific-change` and name the
-change at issue. If the work turns out not to be scientifically material, say so
-and stop applying this procedure rather than performing it as ceremony.
+Before acting, say in one line that you are using `spctx-scientific-change`.
+If the change touches nothing later work relies on and is not about to be
+published, say so and stop: it is exploratory, and the project's instructions
+already cover it.
 
 ## 1. State the Scientific Question and Risk
 
@@ -28,29 +29,32 @@ Do not infer from a filename who may change something or who decides what it mea
 
 Say the level plainly, because the rest of this procedure is gated on it. The
 project's compact context says what later work relies on, and that short list is
-the test: a change that touches nothing on it is exploratory, whatever it is and
-however much work it took. A parameter, a plot, a helper, or a whole method
-comparison is exploratory until someone decides to rely on it.
+the default test: a change that touches nothing on it is exploratory, whatever
+it is and however much work it took, unless something already depends on the
+result without having been listed. A parameter, a plot, a helper, or a whole
+method comparison is exploratory until someone decides to rely on it.
 
-Before starting a sub-investigation, name the scientific question it answers.
-When a computation does not fit the time or memory available, make it smaller,
-with fewer samples, features, or permutations, or ask; do not build variants,
-guards, or retry chains to make it fit. Engineering that answers no scientific
-question is the most expensive kind of exploratory work, and real use has seen
-it take over a project one approved step at a time.
+Before starting a side investigation, name the decision it could change and
+when it will stop. If it could change none, list it as a lead in your reply
+instead of running it. When it ends, say what it settled: adopt it as the
+working default, keep it as an option, or set it aside. Comparing candidate
+methods is a side investigation like any other. When a computation does not fit
+the time or memory available, make it smaller, with fewer samples, features, or
+permutations, or ask; do not build variants, guards, or retry chains to make it
+fit. Engineering that answers no scientific question is the most expensive kind
+of exploratory work.
 
 When the work is exploratory, say in your reply what it showed, what was done,
 and that it is provisional, then stop here; the remaining steps belong to
-results something already depends on. Running them anyway turns a quick look
-into a validation project, which is the way this procedure has been observed to
-cost a project more than it returned. Change project context only when the
-current answer to one of its questions changes, and then rewrite that answer
+results something already depends on or that are about to be published. A
+working default may be adopted while exploring. Change project context only when
+the current answer to one of its questions changes, and then rewrite that answer
 rather than adding an entry for the run.
 
-Continue past this step only when the change touches something on that list, or
-when the user decides that later work will rely on the result. That decision is
-the user's to make; propose it when the work looks load-bearing, and add the
-result to the list in the same turn.
+Continue past this step only when the change touches something on that list,
+when a result is about to be published, or when the user decides that later work
+will rely on the result. That decision is the user's to make; propose it when
+the work looks load-bearing, and add the result to the list in the same turn.
 
 ## 2. Propose the Smallest Useful Check
 
@@ -59,20 +63,19 @@ to rely on the result.
 
 Ask in plain language: "What is the smallest check or observation that could reveal a consequential error? What should happen, within what tolerance or uncertainty, and why?"
 
-Draft an answer from project evidence when possible. Establish the expected signal before inspecting the changed result when practical. Let the responsible scientist correct scientific judgment; never invent an expected result.
+Draft an answer from project evidence when possible. Establish the expected signal before inspecting the changed result when practical. Let the user correct scientific judgment; never invent an expected result. When the expected value comes from published work, check its source with `spctx-literature`.
 
 Prefer a positive or negative control, reference material or sample, clean-kernel notebook rerun, held-out case, sensitivity check, reference acquisition, analytical or manufactured solution, numerical-convergence or limiting-case check, backend comparison, or targeted failure case. These are examples, not requirements. When practical, demonstrate that the check fails for a known bad or pre-change behavior.
 
-Choose one check, not a suite. Comparing candidate methods against each other is
-a separate piece of work with its own level, and it is rarely warranted while
-nothing depends on the answer yet. Do not let one check grow into a benchmark
+Choose one check, not a suite. Do not let one check grow into a benchmark
 program unless the result now being relied on actually needs one.
 
 ## 3. Plan Evidence and Staleness
 
-Scale the record to the level. A result supporting a decision or claim inside
-this project needs a sentence and a date: what was observed, what was expected,
-and when. A public or published result needs the full identity below.
+Scale the record to the level. A result later work relies on inside this
+project needs a sentence and a date: what was observed, what was expected, and
+when. A published result needs the full identity below, and a public version of
+the work that reproduces it for any reader who runs it.
 
 When something produced at a lower level starts to be relied on,
 rebuild its evidence from what already exists: the code and configuration

@@ -382,6 +382,28 @@ class InitializationTests(unittest.TestCase):
         )
         self.assertEqual("# Project Instructions\n\n" + project.CONTEXT_ROUTE_BLOCK + "\n", agents.read_text(encoding="utf-8"))
 
+
+    def test_an_older_practice_preamble_is_offered_with_the_packaged_file(self) -> None:
+        """Text above the core is the project's, so only an upgrade offer can reach it."""
+
+        packaged = self.template_content(".context/scientific-practice.md").decode("utf-8")
+        cases = {
+            "older-preamble": packaged.replace(
+                "This is a working agreement", "This is an older working agreement", 1
+            ),
+            "own-notes-only": packaged + "\nA note this project wrote.\n",
+        }
+        offered = {}
+        for name, text in cases.items():
+            target = self.root / name
+            (target / ".context").mkdir(parents=True)
+            (target / ".context" / "scientific-practice.md").write_text(text, encoding="utf-8")
+            plan = plan_initialization(self.catalog, target, "retrofit")
+            adoption = reporting.initialization_report(plan, dry_run=True)["context_adoption"]
+            offered[name] = adoption.get("packaged_practice_file")
+
+        self.assertEqual(packaged, offered["older-preamble"])
+        self.assertIsNone(offered["own-notes-only"])
     def test_retrofit_reports_retained_skill_as_review_required(self) -> None:
         target = self.root / "retrofit-retained-skill"
         target.mkdir()
@@ -790,7 +812,7 @@ class InitializationReportingAndCliTests(unittest.TestCase):
         skills = payload["agent_skills"]
         self.assertEqual(".agents/skills", skills["convention"])
         self.assertEqual("required_starter_files", skills["installation"])
-        self.assertEqual(3, len(skills["files"]))
+        self.assertEqual(len(AGENT_SKILLS), len(skills["files"]))
         for item in skills["files"]:
             self.assertEqual("available_after_apply", item["state"])
             self.assertEqual("create", item["disposition"])

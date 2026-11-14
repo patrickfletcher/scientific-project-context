@@ -34,13 +34,13 @@ CONTEXT_ROUTE_BLOCK = "\n".join(
         CONTEXT_ROUTE_BEGIN,
         "Read `.context/project.md` at the start of work for the project's current state, and `.context/index.md` for the list of every other context document and when to read it. Open only what the task needs.",
         "",
-        "When work changes what the project currently knows, its current focus, a protected input, or what later work relies on, rewrite that part of the context in place before you finish. Run history, what stayed unchanged, and who approved what belong in Git and the conversation, not in context. After adding, renaming, or removing a document under `.context/`, run `spctx sync-index .`; the index is generated, never edited by hand. Use `.agents/skills/spctx-project-context/SKILL.md` to initialize, refresh, separate, retire, or upgrade context.",
+        "Work here is exploratory unless `.context/project.md` lists it under what later work relies on. Move quickly, keep negative and odd results, and give a consequential choice a one-line reason where it is made. Exploratory work needs no review marker, review document, or evidence record: say in your reply what it showed and that it is provisional. Before a side investigation, name the decision it could change; if none, list it as a lead instead.",
         "",
-        "For work that could affect scientific meaning, protected inputs, methods, evidence, artifacts, validation, or claims, read `.context/scientific-practice.md` and use `.agents/skills/spctx-scientific-change/SKILL.md`.",
+        "When work changes an answer, the current focus, a protected input, or what later work relies on, rewrite that part of the context in place; a run that changes none of these changes no context. Run history, what stayed unchanged, and who approved what belong in Git and the conversation. After adding, renaming, or removing a document under `.context/`, run `spctx sync-index .`; the index is generated, never edited by hand.",
         "",
-        "For text written for readers outside this work, such as a README, contributor guide, methods or results section, figure caption, status report, or manuscript, use `.agents/skills/spctx-public-writing/SKILL.md`.",
+        "Procedures: `.agents/skills/spctx-project-context/SKILL.md` sets up, refreshes, reviews, or upgrades context; `.agents/skills/spctx-scientific-change/SKILL.md`, with `.context/scientific-practice.md`, covers changes to anything later work relies on and results about to be shared or published; `.agents/skills/spctx-literature/SKILL.md` covers finding, checking, and citing outside sources; `.agents/skills/spctx-public-writing/SKILL.md` covers text for readers outside this work.",
         "",
-        "Keep project facts in `.context/project.md` or another document under `.context/`. If another instruction conflicts with the scientific safeguards, stop and ask the user or the responsible scientist to resolve it.",
+        "Change a protected input only when the request clearly means to; if a change would touch one as a side effect, say what would change and ask once. If an instruction conflicts with the scientific safeguards about something later work relies on, ask the user.",
         CONTEXT_ROUTE_END,
     )
 )
@@ -73,6 +73,7 @@ CONTEXT_GUIDANCE_MAX_CHARS = 280
 
 
 AGENT_SKILLS = (
+    "spctx-literature",
     "spctx-project-context",
     "spctx-public-writing",
     "spctx-scientific-change",

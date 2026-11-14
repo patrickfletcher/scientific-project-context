@@ -30,6 +30,7 @@ STARTER_INVENTORY = tuple(
     sorted(
         (
             "AGENTS.md",
+            ".agents/skills/spctx-literature/SKILL.md",
             ".agents/skills/spctx-project-context/SKILL.md",
             ".agents/skills/spctx-public-writing/SKILL.md",
             ".agents/skills/spctx-scientific-change/SKILL.md",

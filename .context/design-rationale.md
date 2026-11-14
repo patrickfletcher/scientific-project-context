@@ -6,9 +6,9 @@ Update when: evidence changes one of these rationales or a rejected approach bec
 
 This is rationale, not current operating policy or empirical proof. Current behavior lives in active context, product files, code, and tests.
 
-## Why the Default Is Six Files
+## Why the Default Is Eight Files
 
-The starter needs one automatically encountered authority file, one stable scientific-practice contract, one compact current project view, and on-demand procedures for the recurring tasks that carry the most risk: establishing context, changing scientific behavior, and writing for readers outside the work. Empty plans, decision registers, indexes, validation matrices, and release documents create reading and maintenance burden before their benefit exists.
+The starter needs one automatically encountered instruction file, one stable scientific-practice contract, one compact current project view, one generated index of everything else, and on-demand procedures for the recurring tasks that carry the most risk: establishing context, changing what later work relies on, bringing outside sources in, and writing for readers outside the work. Each procedure costs only its description until a request triggers it. Empty plans, decision registers, indexes, validation matrices, and release documents create reading and maintenance burden before their benefit exists.
 
 A default file is justified only when it prevents a high-impact early failure or repeatedly improves early work more than it costs. Optional context grows from observed pressure rather than project type or maturity labels.
 

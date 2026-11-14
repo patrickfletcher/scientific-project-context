@@ -40,8 +40,9 @@ Build and artifact verification are rerunnable commands in `AGENTS.md`; run
 them before sharing an artifact rather than keeping their output here. Two
 facts outlast any one run:
 
-- Installed wheels have been exercised only on CPython 3.10 and 3.11 on
-  Windows. The rest of the declared range and every other platform are untested.
+- Installed wheels have been exercised on CPython 3.10 and 3.11 on Windows.
+  The test suite also passes on Linux under CPython 3.10 through 3.14, run
+  from source in throwaway environments on 2026-11-13. macOS is untested.
 - Upstream documentation establishes that `.agents/skills/` is a supported
   repository path for Codex and for Copilot in VS Code, and that Claude Code
   reads `AGENTS.md` only while no `CLAUDE.md` is present. This is documentation
@@ -128,6 +129,30 @@ added during the trial in the author's own maintenance sessions.
 | T2 | Preparing the dev24 upgrade found the same documents listed in four places: the compact file's opening lines, a hand-written list in the index, the generated list beneath it, and the subfolder's own index. The generated list had already fallen behind a new document. | dev24: the index is `.context/index.md`, a starter file that `init` writes and `sync-index` regenerates, holding only the packaged heading and a link to each document with its `Purpose` and `Read when` lines. The routing block sends agents to it alongside `project.md`; the starter and skills say to keep no other list; `check` reports text around the list and a `README.md` beside it, and `sync-index` stops rather than discard project text. |
 | T2 | The missing-path finding fired on gitignored inputs that exist only on the analysis machine. A backticked input path was later rewritten as prose naming only its directory, the contortion `product.md` warns a false finding invites. Rewording the finding would not help: it would repeat on every run. | dev24: the finding skips paths the project's `.gitignore` files exclude, read without running Git. |
 
+T3 is the author's own creative and engineering repository, where appearance
+judged by eye is the deciding evidence, adopted with a pre-dev23 build and used
+daily for about seven weeks. T4 is the author's own analysis repository
+supporting a manuscript in preparation, started at dev25 and used daily for two
+weeks. T1 and T2 continued through dev25. The evidence for all four is Git
+history, current files, two review documents written inside T2, and one inside
+T3; there are no transcripts.
+
+| Trial | Observation | What changed |
+| --- | --- | --- |
+| T2 | After the dev25 upgrade the compact file held at one screen through a poster sprint. Growth moved to review and plan folders outside `.context/`, which `check` does not read, and the project later retired them. | dev26: a split rule and a stated place for material that is not current context. |
+| All | Every trial project wrote its own exploratory-by-default rule into its instruction file or practice notes; two said it overrides steps in the packaged skills. | dev26: the exploratory default and a side-investigation guard in the routing block. |
+| All | Projects used two states, working and relied on, and never the middle level by name; one labeled every document with a level. The author reports the relied-on list as awkward and mostly unused. | dev26: one default and two moments, with the strict reproducibility standard reserved for publication; more use of the list is to be tried after. |
+| T1, T4 | Agents built input fingerprints, freshness gates, code snapshots, or source-hash review signatures for exploratory outputs, and users removed them, in T4 on the second day. All trials converged on a run record of commit and settings. | dev26: input checksums optional; the upgrade lists such code for the user to decide on. |
+| T2, T3, T4 | Role words became gates in single-author and small-group projects: the user called by a role title in the third person, an unnamed lead stamped on reports, documents headed by role-titled evidence. One appeared in fresh agent output after dev25. | dev26: "the user" in shipped text, an ask-once rule for protected inputs, and a writing rule against role titles. |
+| T1, T3 | dev23's named rules held: dated entries and approval narration stayed at zero. Growth returned in shapes they did not name: one plan section per study, dated measurement provenance, reference material. | dev26: a wider definition of a log and a rule to split by why a passage changes. |
+| T1, T3, T4 | Exploration spread by breadth while nothing was relied on, because "name the question" is always met. The users' own guard, naming the decision a study could change and its stop rule, worked. | dev26: that guard in the routing block and `spctx-scientific-change`. |
+| T3 | The project's own review found contradictory rules among reworded copies across focused documents, which `check` cannot see. | dev26: copy numbers as links; a review mode. |
+| T1, T2, T3 | Four audits the user asked for found what routine refreshes missed. | dev26: a review mode in `spctx-project-context`. |
+| T2 | A long-lived branch restored a pre-dev23 routing block at merge, undetected. | dev26: `check` names the package version a tracked region matches, from dev22 on. |
+| T2, T4 | `check` counted command syntax in inline code as unanswered prompts, read "nothing is frozen…" as a named list, and reported history pointers as missing paths. | dev26 fixes. |
+| T2, T3, T4 | Three projects invented labels for how strongly a source supports a statement and wrote their own citation-checking rule; one project's own review found unchecked recollections steering design rules. | dev26: `spctx-literature`. |
+| T2 | At a poster, claim limits held; the fixes were jargon and hedging; public writing's ask-and-wait lines stalled unattended work. | dev26: public writing names an assumed reader and continues. |
+
 ## Agent Skill Behavior Scenarios
 
 Retain these scenarios for comparison on Codex and Copilot Chat. Structural
@@ -150,6 +175,9 @@ not introduce alternate roots or same-named copies into the product trial.
 | Reformat Markdown or rename a non-context implementation symbol. | neither | Avoids scientific or context-maintenance ceremony. |
 | Fix routine packaging metadata with no scientific or context effect. | neither | Uses ordinary repository instructions only. |
 | Bring the project up to date after installing a newer `spctx`. | `spctx-project-context`, upgrade mode | Restores packaged text, preserves project-owned phrasings, and prunes rules an older version left behind. |
+| Check this citation, or find the source of a value the project uses. | `spctx-literature` | Resolves an identifier, says what was read, records the conditions, and never cites from memory. |
+| Write the related-work paragraph for the paper. | `spctx-public-writing`, citing through `spctx-literature` | Cites only checked sources and uses the project's existing list of sources. |
+| Try a quick exploratory change to a figure or analysis. | neither | The routing block is enough; no announcement, check, or record. |
 
 Every `SKILL.md` names itself before acting, so selection, misses, and false
 positives are readable from the transcript. Record whether that line actually
@@ -185,24 +213,20 @@ the structural-only boundary intact.
 
 ## Next Useful Evidence
 
-- After dev25 reaches T2 by upgrade: whether the session restores the context
-  skill before following its steps, offers instruction-file sections in the
-  packaged wording, and moves the hand-written index list when `check` reports
-  the old `README.md` beside the new index; then whether the context stays
-  current state for two weeks, measured by compact-file length, index length,
-  and the density of defensive words outside the product, from a baseline taken
-  at handback.
-- The first upgrade from dev25 onward where the user also asks for the install:
-  whether the session uses the recorded upgrade command or finds the source,
-  and never installs the package by name from a public index.
-- A cold-start test before handback, on a scratch clone and only with the
-  colleague's agreement to other providers: fresh sessions in two or three
-  harnesses, each given the same three prompts (the current state and next
-  step; an exploratory analysis change; a status note for a collaborator).
-  Record files read and in what order, whether a skill announced itself, and the
-  author's score of each answer. This is the fixed-questions outcome measure
-  `.context/project.md` lists as a candidate; T2's handback is the one chance to
-  get a before.
+- Before and after the dev26 upgrade in the author's trial repositories (T2
+  only with the colleague's agreement): fresh sessions, the same four prompts
+  each time (the current state and next step; an exploratory analysis change
+  chosen once per repository; a status note for a collaborator; finding and
+  checking the source of a value the project already uses). Record files read
+  and words read before the first action, skill announcements, questions and
+  stalls, markers or review documents created, context edits, whether
+  identifiers were resolved, and the author's 1–5 score. Then, for two weeks:
+  context size, the share of commits touching context, new project-written
+  overrides, and whether a hand cleanup was needed. This is the fixed-questions
+  outcome measure, adopted in dev26.
+- The first upgrade where the user also asks for the install: whether the
+  session uses the recorded upgrade command, and never installs the package by
+  name from a public index.
 - Colleague trials and further author trials, recorded under the rules above:
   whether skills are found without being named, whether exploratory work stays
   cheap, whether the report lines prompt anything, and whether context upkeep
@@ -210,4 +234,4 @@ the structural-only boundary intact.
 - Whether an untuned project's `0 of 3` line prompts tuning without a request,
   and whether tuned descriptions improve automatic selection.
 - The scenario table above in clean Codex and Copilot Chat sessions.
-- A CI matrix across the declared Python range and operating systems.
+- A CI workflow across the declared Python range and operating systems, including macOS, when the repository is prepared for sharing.

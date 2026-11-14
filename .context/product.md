@@ -31,10 +31,10 @@ Supporting project context makes those specifications usable: current reality, c
 ## Design Principles
 
 1. **Inspect before asking.** Recover observable facts from the project before asking a user to restate them.
-2. **Keep context and evidence proportional.** Start small and add a focused context document only when recurring detail no longer fits comfortably. Scale the evidence a result owes to what depends on it, not to whether the work is scientifically material. Real use showed the materiality gate alone producing validation machinery for exploratory work, because nothing in the contract could say "not yet".
+2. **Keep context and evidence proportional.** Start small and add a focused context document only when recurring detail no longer fits comfortably. Scale the evidence a result owes to what depends on it, not to whether the work is scientifically material. Real use showed the materiality gate alone producing validation machinery for exploratory work, because nothing in the contract could say "not yet". Four trials then showed the level rule was not enough while it lived only in a file read for scientific work: every project wrote its own exploratory default into its always-read instructions. The default now sits in the routing block, the relied-on list stays light, and the one strict reproducibility standard, a public version that reproduces a published result for any reader, belongs to publication.
 3. **Bring scientific practice into the work.** Surface relevant provenance, transformations, assumptions, uncertainty, protected inputs, failure risks, checks, evidence, limits, and staleness when the work makes them matter.
 4. **Give each durable fact one authoritative home.** Reuse an existing issue tracker, README, data dictionary, test plan, architecture document, or public guide when it already works. Choose the correct surface before choosing the file: see Surface Ownership below. The list of context documents is such a fact, and the one a tool can own outright, because every entry comes from the documents themselves: `.context/index.md` is generated, and no other list is kept. T2 showed four separately kept lists of the same documents, one already behind.
-5. **Keep meaning and permission review-owned.** Scientists and domain reviewers decide scientific meaning and claim scope; project, data, and community authorities decide permitted changes, use, and sharing. Do not infer one role from the other. Generated material remains visibly review-required until confirmed.
+5. **Leave meaning to the user and permission to whoever controls the material.** Meaning, the reach of a claim, and reliance are the user's to decide; permission to use or share material the project did not produce comes from whoever controls it. Shipped text says "the user" rather than naming roles: trials turned role titles into approval gates nobody actually passed through. Agent-drafted interpretation is labeled provisional and is reviewed before it is relied on or published.
 6. **Bound automation to inspectable mechanics.** Tools may copy known resources, check structure, and update marked inventories. They do not decide what a project means or which conclusions are valid.
 7. **Connect results and claims to evidence.** Make the relevant chain from source inputs and transformations through settings, notebook/code/protocol and method identity, expected signal, observed result and uncertainty, limits, and staleness reconstructable. Identify code by its version rather than by hashing its source: real use turned an ungated staleness rule into scripts that refused to run after their own edits.
 8. **Prepare for sharing without front-loading release work.** Confirmed internal context may become the basis for public documentation when a paper, archive, release, or handoff becomes real.
@@ -45,13 +45,14 @@ Supporting project context makes those specifications usable: current reality, c
 
 A project has three durable text surfaces with different readers and different
 read frequencies. Real use showed that without an explicit rule, initialization
-duplicates environment, dependency, and command detail into all three at once.
+duplicates environment, dependency, and command detail into all three at once. A fourth place holds material that is not current state; trials put it in context, where it outgrew routing, because nothing named it.
 
 | Surface | Reader | Owns | Does not own |
 | --- | --- | --- | --- |
 | `AGENTS.md` or another discovered instruction file | agents, every session | Operational constraints an agent must honor before acting: which environment to activate, how to invoke tests and tools, protected inputs in one line, repository conventions, and routes to everything else. | Scientific argument, evidence, or anything a human reader needs. |
 | `README.md` or other public documentation | humans, including outsiders | Setup, commands, outputs, and the project's purpose in plain language. | Agent-only constraints, internal jargon, transient counts, or anything that goes stale between runs. |
 | `.context/project.md` and its focused sources | humans and agents, on demand | Where the science stands, what it rests on, and what is undecided. | Always-read operational constraints, or a second copy of README setup detail. |
+| Reference material, tool manuals, and test protocols, beside what they describe or under `docs/` | whoever works on that part | Stable sourced reference, how a tool or procedure works, and how a number was obtained. | Current state; context links to them and is not listed beside them in the index. |
 
 Each fact belongs to exactly one surface. The other surfaces link to it. When a
 fact is operational *and* scientifically material — a protected input, for
@@ -70,13 +71,14 @@ A one-off analysis may remain in the starter set for its entire life. A maintain
 
 ## Current Product Shape
 
-The starter set contains seven files:
+The starter set contains eight files:
 
 ```text
 AGENTS.md
 .context/index.md
 .context/project.md
 .context/scientific-practice.md
+.agents/skills/spctx-literature/SKILL.md
 .agents/skills/spctx-project-context/SKILL.md
 .agents/skills/spctx-public-writing/SKILL.md
 .agents/skills/spctx-scientific-change/SKILL.md
@@ -84,14 +86,15 @@ AGENTS.md
 
 - `AGENTS.md` carries project authority and collaboration conventions, a compact versioned route to current context and its maintenance workflows, the project essentials an agent needs before acting (environment activation, test and tool invocation, protected inputs in one line, repository coding conventions or a route to an existing convention source, and where `spctx` is installed), and where each kind of fact lives. It is the scarce budget: everything an on-demand skill can own has been moved out of it.
 - `.context/index.md` is the index and only the index: a packaged heading, then a link to every other Markdown file under `.context/`, in any folder, with the `Purpose` and `Read when` lines from its top. `init` writes it, listing whatever documents already exist, and `sync-index` regenerates it. The routing block sends agents to it at the start of work alongside `project.md`, so one parallel read gives both the current state and the map.
-- `.context/scientific-practice.md` carries the stable, relevance-gated scientific contract: who decides meaning and who decides permission, what will depend on the result and the evidence each level owes, protected material and permitted use, questions and methods, provenance and uncertainty, discriminating checks, evidence and staleness, and claim boundaries.
+- `.context/scientific-practice.md` carries the stable, relevance-gated scientific contract: decisions and protected material, what will depend on the result and the evidence each level owes, protected material and permitted use, questions and methods, provenance and uncertainty, discriminating checks, evidence and staleness, and claim boundaries.
 - `.context/project.md` is the compact project-specific application: purpose, materials and entry points, current work, protected material, main scientific risk, useful check, current findings and limits, what later work relies on, unresolved questions, and sharing intent. The relied-on list is the one that carries the intended-use levels in practice: the default is exploratory, only the exceptions are named, and a change that touches nothing on the list needs no ceremony.
-- `spctx-project-context` activates, initializes, refreshes, separates, and retires context, records the project's own field conventions in the practice contract outside the managed core, and tunes the skill trigger descriptions to the project's own vocabulary.
-- `spctx-scientific-change` connects a material change to its main risk, smallest useful check, evidence, and stale dependents, and stops after stating the risk when nothing depends on the result yet.
+- `spctx-project-context` activates, initializes, refreshes, separates, reviews, and retires context, lists what earlier versions left behind during an upgrade, records the project's own field conventions in the practice contract outside the managed core, and tunes the skill trigger descriptions to the project's own vocabulary.
+- `spctx-scientific-change` connects a change to something later work relies on, or a result about to be published, to its main risk, smallest useful check, evidence, and stale dependents. Exploratory work does not need it; when it is used anyway it stops at the first step, after asking what decision a side investigation could change.
+- `spctx-literature` brings outside knowledge in: it identifies each source exactly, says what was read, separates what the authors measured from what they concluded, carries values into the project with their conditions, keeps one list of sources, bounds gap claims by the search behind them, and credits reuse. Depth follows use: a recalled reference labeled as recalled is enough while exploring.
 - `spctx-public-writing` turns confirmed facts into text for a named reader outside the work, matching claim strength to the level the work has reached and keeping public text true to the implementation. It applies the levels the contract defines rather than defining its own, and hands a claim that would be promoted by drafting back to `spctx-scientific-change`.
 - `.agents/skills/` is the sole procedure surface. Each `SKILL.md` combines portable discovery frontmatter with its complete canonical procedure, and states which skill it is before acting so a transcript shows whether the procedure ran.
 
-The three skills divide by the kind of work rather than by document type: establish and repair context, change something scientifically material, or write for an outside reader. That split came from real use. Public writing was previously a step inside `spctx-project-context`, where a request such as "write up the results" would almost never route to it, and the one documented recurring field failure was exactly this: internal detail and transient counts leaking into a public README. Reader, stage, and currency are also judgments the other two skills never had to make.
+The four skills divide by the kind of work rather than by document type: establish and repair context, change something later work relies on, bring outside sources in, or write for an outside reader. The literature skill came from three trials that invented their own labels for how strongly a source supports a statement and their own citation rule, and from one project's own review finding unchecked recollections steering its design rules; a reference written from memory is the hazard an agent adds. That split came from real use. Public writing was previously a step inside `spctx-project-context`, where a request such as "write up the results" would almost never route to it, and the one documented recurring field failure was exactly this: internal detail and transient counts leaking into a public README. Reader, stage, and currency are also judgments the other two skills never had to make.
 
 Design \u2014 choosing what observation would discriminate between competing explanations \u2014 is deliberately left to people. It is the highest-leverage scientific moment and the one where a plausible generated answer does the most damage, so the contract asks for a discriminating check and an expected signal rather than offering a procedure for inventing them.
 
@@ -101,7 +104,7 @@ Every document under `.context/` is listed, so the index never has to be judged 
 
 The index's name follows conventions agents already meet. In Karpathy's LLM wiki pattern, `index.md` is the catalog an agent reads before opening pages, and Google's Open Knowledge Format reserves `index.md` for a folder listing that producers may generate. `README.md` means human-facing setup, which is how the starter itself uses the word, so the index is not called that, and a `README.md` at the root of `.context/` is reported (`DH-ROUTE-007`) rather than listed. Both conventions also keep a `log.md`; this product does not, because Git already records history and a log inside context is what buried T2's current answers. If one flat list stops being enough, a folder's own listing would also be a generated `index.md`; until a project shows that need, subfolders keep no listing.
 
-The prescribed layout stops at the seven starter files. Everything else under `.context/` is the project's, named and foldered as the project likes, and all of it is listed; material that is not current context belongs elsewhere in the repository or in Git history. A project declares a settled fact in those documents whenever it wants the fact protected. The package ships no example documents: a collection of them that no command could deliver was removed at dev21.
+The prescribed layout stops at the eight starter files. Everything else under `.context/` is the project's, named and foldered as the project likes, and all of it is listed; material that is not current context belongs elsewhere in the repository or in Git history. A project declares a settled fact in those documents whenever it wants the fact protected. The package ships no example documents: a collection of them that no command could deliver was removed at dev21.
 
 ## Activation and Maintenance Model
 
@@ -121,7 +124,7 @@ Context records current state, rewritten in place. A record that gains an entry 
 
 Successful initialization presents the same bounded command inventory through two entry points: the human/machine operation report and installed `AGENTS.md`. Discovery does not imply use. The public CLI consists of `init`, read-only `check`, and preview-first `sync-index`.
 
-Agent Skills discovery is part of the starter contract. Current Codex and VS Code documentation both support `.agents/skills/`, so the three skills are always installed there for the primary Codex-plus-Copilot use case. Their YAML frontmatter contains only the portable required `name` and trigger-oriented `description`; each body is the complete canonical procedure. Host-specific or experimental fields are omitted unless a demonstrated behavior requires and validates them.
+Agent Skills discovery is part of the starter contract. Current Codex and VS Code documentation both support `.agents/skills/`, so the four skills are always installed there for the primary Codex-plus-Copilot use case. Their YAML frontmatter contains only the portable required `name` and trigger-oriented `description`; each body is the complete canonical procedure. Host-specific or experimental fields are omitted unless a demonstrated behavior requires and validates them.
 
 Claude Code is the second primary target and reads no path under `.agents/`, so `--claude` adds one generated pointer per skill under `.claude/skills/`: the same description, and a body that routes to the canonical file. Claude Code reads `AGENTS.md` directly while the project has no `CLAUDE.md`, so the instruction file needs no second copy; where a `CLAUDE.md` exists, the report asks for an `@AGENTS.md` import line and never edits it. Two copies of a procedure would drift, so no procedure body is ever duplicated to reach a host, and a pointer that no longer agrees with its skill is reported. Apart from this bounded pointer, the CLI generates and manages no alternate skill root. Occupied canonical skills and occupied pointers remain project-owned and are not overwritten. Context documents are not skills: they retain visible `Purpose`, `Read when`, and `Update when` guidance rather than duplicating it into universal YAML metadata without a defined consumer and versioned schema.
 
@@ -149,7 +152,7 @@ Keep low-volume facts in `.context/project.md`. `spctx-project-context` owns the
 test for when a separate document is warranted; this repository does not restate
 it.
 
-Link to an existing authoritative source instead of copying it. If a new document is generated, include only supported facts, make unknowns explicit, and retain a visible review-required marker until consequential scientific, safety, access, licensing, governance, or claim content is confirmed. A declined split should not be suggested again unless the situation materially changes.
+Link to an existing authoritative source instead of copying it. If a new document is generated, include only supported facts and make unknowns explicit. Mark it review-required only for unconfirmed interpretation an agent drafted; moved content and documents the user requested carry no marker. A declined split should not be suggested again unless the situation materially changes.
 
 Generated public text follows the same rule. Once a public document becomes authoritative, internal context links to it instead of maintaining a shadow copy.
 
@@ -296,7 +299,7 @@ whether adoption changes behavior or quietly changes nothing.
 
 | Situation | What `init` does | What is absent afterwards | Main risk |
 | --- | --- | --- | --- |
-| Empty or new directory | Writes all seven starter files | Nothing | Placeholders left unfilled still read as adopted |
+| Empty or new directory | Writes all eight starter files | Nothing | Placeholders left unfilled still read as adopted |
 | Existing repository, no instruction file | Writes the starter, including the instruction file | Nothing structural | As above |
 | Existing repository that already has `AGENTS.md` | Keeps it byte-for-byte, reports the routing block for a person to place, and prints the packaged file to offer sections from | Every packaged instruction section except the route | An inert install: files present, day-to-day behavior unchanged |
 | Existing repository with `.github/copilot-instructions.md` or a contributing guide, but no `AGENTS.md` | Writes `AGENTS.md` | Nothing structural | A second instruction file competing for authority, which nothing detects |

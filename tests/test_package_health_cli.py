@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import io
 import json
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 
@@ -16,8 +18,12 @@ from scientific_project_context import (  # noqa: E402
     DISTRIBUTION_NAME,
     __version__,
 )
-from scientific_project_context import cli, health, reporting  # noqa: E402
-from scientific_project_context.project import apply_index_sync, plan_index_sync  # noqa: E402
+from scientific_project_context import cli, health, history, reporting  # noqa: E402
+from scientific_project_context.project import (  # noqa: E402
+    apply_index_sync,
+    build_claude_skill_stub,
+    plan_index_sync,
+)
 from scientific_project_context.resources import (  # noqa: E402
     ResourceCatalog,
     load_filesystem_resources,
@@ -325,6 +331,197 @@ class PackageHealthCliTests(unittest.TestCase):
             [i["evidence"] for i in payload["findings"] if i["check_id"] == "DH-STALE-001"],
         )
 
+    def test_paths_in_lines_that_point_into_git_history_are_not_reported(self) -> None:
+        """A retired file named "at commit X" is a pointer into history, not drift."""
+
+        (self.project / "src").mkdir()
+        project_context = self.project / ".context/project.md"
+        project_context.write_text(
+            project_context.read_text(encoding="utf-8")
+            + "\nThe old runner `src/old_runner.py` is at commit `a882412`.\n"
+            + "Read it with `git show v1:src/older.py`; `src/gone.py` is not there.\n"
+            + "\n| Retired step | commit `9f97c0a` | `src/step.py` |\n",
+            encoding="utf-8",
+        )
+
+        _, payload = self.run_json()
+
+        self.assertEqual([], [i for i in payload["findings"] if i["check_id"] == "DH-STALE-001"])
+
+    def test_a_link_to_a_missing_file_is_reported_once(self) -> None:
+        (self.project / ".context" / "method.md").write_text(
+            "# Method\n\nPurpose: the method.\nRead when: changing it.\nUpdate when: it changes.\n\n"
+            "See [notes](notes.md), [notes again](notes.md#top), [the guide](../docs/guide.md), "
+            "[a site](https://example.org/x.md), [here](#method), and [project](project.md).\n"
+            "Retired: [old plan](old-plan.md) at commit `abc1234`.\n",
+            encoding="utf-8",
+        )
+        (self.project / ".gitignore").write_text("docs/\n", encoding="utf-8")
+        apply_index_sync(plan_index_sync(self.catalog, self.project))
+
+        _, payload = self.run_json()
+
+        links = [i for i in payload["findings"] if i["check_id"] == "DH-LINK-001"]
+        self.assertEqual(["notes.md"], [i["evidence"] for i in links])
+        self.assertEqual(".context/method.md", links[0]["path"])
+        self.assertEqual(health.UNFINISHED, links[0]["severity"])
+
+    def test_a_percent_encoded_link_to_an_existing_file_is_not_reported(self) -> None:
+        (self.project / "docs").mkdir()
+        (self.project / "docs" / "My Report.md").write_text("# Report\n", encoding="utf-8")
+        agents = self.project / "AGENTS.md"
+        agents.write_text(
+            agents.read_text(encoding="utf-8") + "\nSee the [report](docs/My%20Report.md).\n",
+            encoding="utf-8",
+        )
+
+        _, payload = self.run_json()
+
+        self.assertEqual([], [i for i in payload["findings"] if i["check_id"] == "DH-LINK-001"])
+
+    def test_current_package_text_is_never_called_earlier(self) -> None:
+        """A region a later release leaves unchanged matches its earlier digest too."""
+
+        current = {}
+        for key, path, begin, end in (
+            ("practice_core", ".context/scientific-practice.md", health.SCIENTIFIC_PRACTICE_BEGIN, health.SCIENTIFIC_PRACTICE_END),
+            ("routing", "AGENTS.md", health.CONTEXT_ROUTE_BEGIN, health.CONTEXT_ROUTE_END),
+        ):
+            _, block = health.extract_managed_block((self.project / path).read_text(encoding="utf-8"), begin, end)
+            current[key] = {hashlib.sha256(block.encode("utf-8")).hexdigest(): ("0.1.0.dev20",)}
+        for name in health.AGENT_SKILLS:
+            body = health.parse_agent_skill_content(
+                (self.project / ".agents/skills" / name / "SKILL.md").read_bytes()
+            ).body
+            current[f"skill:{name}"] = {hashlib.sha256(body.encode("utf-8")).hexdigest(): ("0.1.0.dev20",)}
+
+        with mock.patch.dict(history.EARLIER_PACKAGED_REGIONS, current):
+            _, payload = self.run_json()
+
+        self.assertEqual([], payload["state"]["earlier_package_text"])
+        self.assertEqual([], payload["findings"])
+
+    def test_a_link_in_the_instruction_file_is_checked_too(self) -> None:
+        agents = self.project / "AGENTS.md"
+        agents.write_text(
+            agents.read_text(encoding="utf-8") + "\nSee the [run guide](docs/run.md).\n",
+            encoding="utf-8",
+        )
+
+        _, payload = self.run_json()
+
+        self.assertEqual(
+            ["docs/run.md"],
+            [i["evidence"] for i in payload["findings"] if i["check_id"] == "DH-LINK-001"],
+        )
+
+    def test_command_syntax_in_inline_code_is_not_an_unanswered_prompt(self) -> None:
+        agents = self.project / "AGENTS.md"
+        before = self.run_json()[1]["state"]["starter_prompts"][0]["unanswered"]
+        agents.write_text(
+            agents.read_text(encoding="utf-8")
+            + "\nRun `python scripts/run.py [--input <name>]` or `make [target]`; tables use `[figure_inputs]`.\n",
+            encoding="utf-8",
+        )
+
+        after = self.run_json()[1]["state"]["starter_prompts"][0]["unanswered"]
+
+        self.assertEqual(before, after)
+
+    def test_a_relied_on_line_that_opens_with_nothing_names_nothing(self) -> None:
+        project_context = self.project / ".context/project.md"
+        cases = {
+            "nothing is frozen. Only the user freezes an exact output directory here.": "nothing_named",
+            "None; every result is exploratory.": "nothing_named",
+            "nothing except the curation table.": "named",
+            "None of the raw recordings under `data/raw/` may be edited; the fitted model.": "named",
+            "Nothing in `raw/` may be edited.": "named",
+            "Nothing yet.": "nothing_named",
+            "the saved curation and the readout units.": "named",
+        }
+        for value, expected in cases.items():
+            with self.subTest(value=value):
+                project_context.write_text(
+                    PROJECT_CONTEXT.replace(
+                        "**What later work relies on**: nothing yet",
+                        f"**What later work relies on**: {value}",
+                    ),
+                    encoding="utf-8",
+                )
+                self.assertEqual(expected, self.run_json()[1]["state"]["relied_on"])
+
+    def test_a_missing_pointer_is_reported_when_the_project_uses_pointers(self) -> None:
+        """A skill a newer version ships has no pointer until `init --claude` adds it."""
+
+        names = list(health.AGENT_SKILLS)
+        for name in names[:-1]:
+            canonical = self.project / ".agents/skills" / name / "SKILL.md"
+            parts = health.parse_agent_skill_content(canonical.read_bytes())
+            pointer = self.project / ".claude/skills" / name / "SKILL.md"
+            pointer.parent.mkdir(parents=True)
+            pointer.write_bytes(build_claude_skill_stub(name, parts.description))
+
+        _, payload = self.run_json()
+
+        missing = [i for i in payload["findings"] if i["check_id"] == "DH-SKILL-005"]
+        self.assertEqual([f".claude/skills/{names[-1]}/SKILL.md"], [i["path"] for i in missing])
+
+    def test_no_pointer_is_expected_when_the_project_uses_none(self) -> None:
+        _, payload = self.run_json()
+
+        self.assertEqual([], [i for i in payload["findings"] if i["check_id"] == "DH-SKILL-005"])
+
+    def test_an_earlier_packaged_core_and_route_are_named_as_an_upgrade_not_an_edit(self) -> None:
+        """A branch that merged an older copy, or a project not yet upgraded, holds package text."""
+
+        practice = self.project / ".context/scientific-practice.md"
+        old_core = practice.read_text(encoding="utf-8").replace(
+            "a plausible agent-generated explanation is not evidence.",
+            "a plausible agent-generated explanation is still not evidence.",
+        )
+        practice.write_text(old_core, encoding="utf-8")
+        agents = self.project / "AGENTS.md"
+        agents.write_text(
+            agents.read_text(encoding="utf-8").replace("Open only what the task needs.", "Open what you need."),
+            encoding="utf-8",
+        )
+        regions = {}
+        for key, path, begin, end in (
+            ("practice_core", practice, health.SCIENTIFIC_PRACTICE_BEGIN, health.SCIENTIFIC_PRACTICE_END),
+            ("routing", agents, health.CONTEXT_ROUTE_BEGIN, health.CONTEXT_ROUTE_END),
+        ):
+            _, block = health.extract_managed_block(path.read_text(encoding="utf-8"), begin, end)
+            regions[key] = {hashlib.sha256(block.encode("utf-8")).hexdigest(): ("0.1.0.dev20", "0.1.0.dev21")}
+
+        with mock.patch.dict(history.EARLIER_PACKAGED_REGIONS, regions):
+            _, payload = self.run_json()
+            output = io.StringIO()
+            cli.main(["check", str(self.project)], catalog=self.catalog, stdout=output)
+
+        core = next(i for i in payload["findings"] if i["check_id"] == "DH-PRACTICE-001")
+        self.assertEqual(health.UNFINISHED, core["severity"])
+        self.assertIn("0.1.0.dev20 to 0.1.0.dev21", core["message"])
+        route = next(i for i in payload["findings"] if i["check_id"] == "DH-ROUTE-004")
+        self.assertIn("earlier package text", route["evidence"])
+        self.assertEqual(
+            ["routing block", "scientific-practice core"],
+            [item["region"] for item in payload["state"]["earlier_package_text"]],
+        )
+        self.assertIn("Text from an earlier package version", output.getvalue())
+
+    def test_an_edited_core_that_no_package_shipped_stays_broken(self) -> None:
+        practice = self.project / ".context/scientific-practice.md"
+        practice.write_text(
+            practice.read_text(encoding="utf-8").replace("not evidence.", "evidence enough.", 1),
+            encoding="utf-8",
+        )
+
+        _, payload = self.run_json()
+
+        core = next(i for i in payload["findings"] if i["check_id"] == "DH-PRACTICE-001")
+        self.assertEqual(health.BROKEN, core["severity"])
+        self.assertEqual([], payload["state"]["earlier_package_text"])
+
     def test_an_overlong_routing_line_is_reported_as_too_long_not_missing(self) -> None:
         (self.project / ".context" / "method.md").write_text(
             "# Method\n\nPurpose: " + "word " * 70 + "\nRead when: changing it.\nUpdate when: it changes.\n",
@@ -365,8 +562,8 @@ class PackageHealthCliTests(unittest.TestCase):
         practice = self.project / ".context/scientific-practice.md"
         practice.write_text(
             practice.read_text(encoding="utf-8").replace(
-                "A plausible agent-generated explanation is not evidence.",
-                "A plausible agent-generated explanation might be evidence.",
+                "a plausible agent-generated explanation is not evidence.",
+                "a plausible agent-generated explanation might be evidence.",
             ),
             encoding="utf-8",
         )

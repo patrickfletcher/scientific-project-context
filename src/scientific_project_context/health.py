@@ -5,11 +5,13 @@ from __future__ import annotations
 import os
 import re
 import stat
+from urllib.parse import unquote
 from dataclasses import dataclass
 from difflib import unified_diff
 from pathlib import Path, PurePosixPath
 from typing import Iterable, Iterator, Sequence
 
+from .history import earlier_package_version
 from .project import (
     AGENT_SKILLS,
     CONTEXT_EMPTY_INVENTORY_LINE,
@@ -71,6 +73,12 @@ MARKDOWN_LINK_RE = re.compile(r"\[([^\]\n]*)\]\([^)\n]*\)")
 STALE_REFERENCE_MAX_FINDINGS = 8
 # A repository-relative path with a directory and a file extension, and nothing else.
 STALE_REFERENCE_RE = re.compile(r"[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)+\.[A-Za-z0-9]{1,6}")
+# A line that points into Git history, such as "at commit `a882412`" or a
+# `git show` command, names paths as they were then, not as they are now.
+HISTORY_POINTER_RE = re.compile(r"\b(?:commit|tag)\s+`[^`\n]+`|`git\s+(?:show|checkout|worktree)\b")
+# A Markdown link whose target is a repository path rather than a URL or anchor.
+LINK_TARGET_RE = re.compile(r"(?<!!)\[[^\]\n]*\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"\n]*\")?\s*\)")
+LINK_MAX_FINDINGS = 8
 
 PRACTICE_PROJECT_SECTION = "This Project's Practice"
 # A bracketed prompt the starter ships, excluding Markdown links.
@@ -83,6 +91,12 @@ PROMPTED_STARTER_PATHS = ("AGENTS.md", PROJECT_CONTEXT_PATH)
 RELIED_ON_FIELD = "What later work relies on"
 RELIED_ON_NOTHING_PHRASES = frozenset(
     {"nothing", "nothing yet", "none", "none yet", "nothing so far", "not yet"}
+)
+# A first sentence that is only "nothing" or "none" with a short qualifier, as in
+# "nothing is frozen", names nothing; "none of the raw files may change" names something.
+RELIED_ON_NOTHING_RE = re.compile(
+    r"(?:nothing|none)(?:\s+(?:yet|so far|for now|at all|"
+    r"is (?:frozen|relied on|listed|named|settled)(?:\s+yet)?))?"
 )
 
 # Observation kinds. These describe what an observation asks of a reader; they
@@ -122,6 +136,15 @@ class ContextAdoption:
     project_route: str
     instruction_compatibility: str
     boundary: str
+
+
+@dataclass(frozen=True, slots=True)
+class EarlierRegion:
+    """A tracked region that holds exactly the text an earlier package version shipped."""
+
+    path: str
+    region: str
+    version: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,6 +198,7 @@ class HealthResult:
     practice_localization: str = "not_inspected"
     starter_prompts: tuple[StarterPrompts, ...] = ()
     relied_on: str = "not_inspected"
+    earlier_regions: tuple[EarlierRegion, ...] = ()
 
     @property
     def counts(self) -> dict[str, int]:
@@ -661,6 +685,7 @@ def check_agent_skill_drift(
         )
 
     if comparison.body == "modified":
+        earlier_body = _earlier_skill_version(relative_path.split("/")[2], content)
         next_action = (
             "Restore the packaged body and keep project facts in the instruction file or "
             "`.context/`, or accept that this project now maintains this procedure itself."
@@ -680,8 +705,12 @@ def check_agent_skill_drift(
                 "agent-skill",
                 relative_path,
                 None,
-                "Agent Skill body differs from the packaged procedure, so package updates will not reach it.",
-                "body: modified",
+                (
+                    f"Agent Skill body is the procedure package version {earlier_body} shipped; the installed package ships a newer one."
+                    if earlier_body
+                    else "Agent Skill body differs from the packaged procedure, so package updates will not reach it."
+                ),
+                f"body: earlier package text ({earlier_body})" if earlier_body else "body: modified",
                 relative_path,
                 next_action,
             )
@@ -693,6 +722,35 @@ def _catalog_content(catalog: ResourceCatalog, relative_path: str) -> bytes:
 
 def check_claude_skill_pointers(root: Path, findings: list[Finding]) -> None:
     """Check pointer skills only where this project already has them."""
+
+    present = [
+        skill_name
+        for skill_name in AGENT_SKILLS
+        if _link_kind(root / claude_skill_path(skill_name)) is not None
+        or (root / claude_skill_path(skill_name)).exists()
+    ]
+    if present:
+        # A project that uses pointers needs one for each packaged skill; a skill a
+        # newer version ships has none until `init --claude` adds it.
+        for skill_name in AGENT_SKILLS:
+            if skill_name in present or not (root / agent_skill_path(skill_name)).is_file():
+                continue
+            relative_path = claude_skill_path(skill_name)
+            findings.append(
+                Finding(
+                    "DH-SKILL-005",
+                    UNFINISHED,
+                    "agent-skill",
+                    relative_path,
+                    None,
+                    "This project has Claude pointer skills, but none for this skill, so Claude "
+                    "Code cannot find it.",
+                    agent_skill_path(skill_name),
+                    relative_path,
+                    "Run `spctx init . --claude` to add the missing pointer; existing pointers "
+                    "are left as they are.",
+                )
+            )
 
     for skill_name in AGENT_SKILLS:
         relative_path = claude_skill_path(skill_name)
@@ -830,6 +888,72 @@ def _uninspected_context_adoption() -> ContextAdoption:
     )
 
 
+def _earlier_region_version(root: Path, region: str) -> str | None:
+    """Name the earlier package version whose text a tracked region still holds."""
+
+    if region == "routing":
+        path, begin, end = root / "AGENTS.md", CONTEXT_ROUTE_BEGIN, CONTEXT_ROUTE_END
+    elif region == "practice_core":
+        path, begin, end = root / SCIENTIFIC_PRACTICE_PATH, SCIENTIFIC_PRACTICE_BEGIN, SCIENTIFIC_PRACTICE_END
+    else:
+        return None
+    try:
+        if _link_kind(path) is not None or not path.is_file():
+            return None
+        state, block = extract_managed_block(path.read_bytes(), begin, end)
+    except OSError:
+        return None
+    if state != "present" or block is None:
+        return None
+    return earlier_package_version(region, block)
+
+
+def _earlier_skill_version(skill_name: str, content: bytes) -> str | None:
+    try:
+        body = parse_agent_skill_content(content).body
+    except OperationError:
+        return None
+    return earlier_package_version(f"skill:{skill_name}", body)
+
+
+def inspect_earlier_regions(
+    catalog: ResourceCatalog,
+    root: Path,
+    adoption: ContextAdoption,
+) -> tuple[EarlierRegion, ...]:
+    """List tracked regions that hold an earlier package version's text, not the current one.
+
+    A region the current package still ships unchanged also matches its earlier
+    digest, so only regions that differ from the installed package are named.
+    """
+
+    found: list[EarlierRegion] = []
+    for region, path, label, state in (
+        ("routing", "AGENTS.md", "routing block", adoption.agent_route),
+        ("practice_core", SCIENTIFIC_PRACTICE_PATH, "scientific-practice core", adoption.practice_core),
+    ):
+        if state != "modified":
+            continue
+        version = _earlier_region_version(root, region)
+        if version:
+            found.append(EarlierRegion(path, label, version))
+    for skill_name in AGENT_SKILLS:
+        relative_path = agent_skill_path(skill_name)
+        path = root / relative_path
+        try:
+            if _link_kind(path) is not None or not path.is_file():
+                continue
+            content = path.read_bytes()
+            if compare_agent_skill(content, _catalog_content(catalog, relative_path)).body != "modified":
+                continue
+            version = _earlier_skill_version(skill_name, content)
+        except (OSError, KeyError, OperationError):
+            continue
+        if version:
+            found.append(EarlierRegion(relative_path, "skill body", version))
+    return tuple(found)
+
+
 def check_practice_core(
     root: Path,
     adoption: ContextAdoption,
@@ -842,7 +966,26 @@ def check_practice_core(
     could hold every file, route nothing, and still be told it was fine.
     """
 
-    if adoption.practice_core == "modified":
+    earlier_core = (
+        _earlier_region_version(root, "practice_core")
+        if adoption.practice_core == "modified"
+        else None
+    )
+    if earlier_core:
+        findings.append(
+            Finding(
+                "DH-PRACTICE-001",
+                UNFINISHED,
+                "scientific-practice",
+                SCIENTIFIC_PRACTICE_PATH,
+                None,
+                f"The scientific-practice core is the text package version {earlier_core} shipped; the installed package ships a newer one.",
+                f"managed core state: earlier package text ({earlier_core})",
+                SCIENTIFIC_PRACTICE_PATH,
+                "Upgrade: replace the marked section with the packaged core that `spctx init . --dry-run` prints.",
+            )
+        )
+    elif adoption.practice_core == "modified":
         findings.append(
             Finding(
                 "DH-PRACTICE-001",
@@ -871,6 +1014,9 @@ def check_practice_core(
             )
         )
 
+    earlier_route = (
+        _earlier_region_version(root, "routing") if adoption.agent_route == "modified" else None
+    )
     if adoption.agent_route in {"modified", "invalid"}:
         findings.append(
             Finding(
@@ -879,8 +1025,16 @@ def check_practice_core(
                 "routing",
                 "AGENTS.md",
                 None,
-                "The routing block is present but no longer matches the installed package, so some of what it points to may be wrong.",
-                f"managed route state: {adoption.agent_route}",
+                (
+                    f"The routing block is the text package version {earlier_route} shipped, so some of what it points to may be out of date."
+                    if earlier_route
+                    else "The routing block is present but no longer matches the installed package, so some of what it points to may be wrong."
+                ),
+                (
+                    f"managed route state: earlier package text ({earlier_route})"
+                    if earlier_route
+                    else f"managed route state: {adoption.agent_route}"
+                ),
                 "AGENTS.md",
                 "Replace the marked block with the current packaged routing block; your own text outside the markers is untouched.",
             )
@@ -1272,6 +1426,8 @@ def check_stale_references(root: Path, findings: list[Finding]) -> None:
             continue
         seen: set[str] = set()
         for number, line in enumerate(text.splitlines(), start=1):
+            if HISTORY_POINTER_RE.search(line):
+                continue
             for span in INLINE_CODE_RE.findall(line):
                 candidate = span.strip("`")
                 if candidate in seen or not STALE_REFERENCE_RE.fullmatch(candidate):
@@ -1304,6 +1460,73 @@ def check_stale_references(root: Path, findings: list[Finding]) -> None:
                 )
 
 
+def check_link_targets(root: Path, findings: list[Finding]) -> None:
+    """Report Markdown links in context and the instruction file whose target is missing.
+
+    Only whether the target exists is checked; nothing is opened or followed, and
+    anchors are not checked. URLs, in-page anchors, paths outside the project, and
+    paths the project's `.gitignore` files exclude are skipped, as are lines that
+    point into Git history. Moving or retiring a document is when links break.
+    """
+
+    sources: list[Path] = []
+    agents = root / "AGENTS.md"
+    if agents.is_file() and _link_kind(agents) is None:
+        sources.append(agents)
+    design_root = root / ".context"
+    if design_root.is_dir():
+        sources.extend(
+            path
+            for path in _walk_plain_files(design_root)
+            if path.suffix.casefold() == ".md" and rel(path, root) != CONTEXT_INDEX_PATH
+        )
+    reported = 0
+    for path in sources:
+        try:
+            text = FENCED_CODE_RE.sub("", read_text(path))
+        except OSError:
+            continue
+        seen: set[str] = set()
+        for number, line in enumerate(text.splitlines(), start=1):
+            if HISTORY_POINTER_RE.search(line):
+                continue
+            line = INLINE_CODE_RE.sub("", line)
+            for match in LINK_TARGET_RE.finditer(line):
+                target = match.group(1)
+                if re.match(r"[A-Za-z][A-Za-z0-9+.-]*:", target) or target.startswith(("#", "/")):
+                    continue
+                # Editors percent-encode spaces and other characters in link targets.
+                target_path = unquote(target.split("#", 1)[0].split("?", 1)[0])
+                if not target_path or target_path in seen or "<" in target_path:
+                    continue
+                # Normalize lexically: `check` never follows links to decide a path.
+                candidate = Path(os.path.normpath(path.parent / target_path))
+                try:
+                    relative = candidate.relative_to(root).as_posix()
+                except ValueError:
+                    continue
+                if os.path.lexists(candidate) or _is_gitignored(root, relative):
+                    continue
+                seen.add(target_path)
+                if reported >= LINK_MAX_FINDINGS:
+                    return
+                reported += 1
+                findings.append(
+                    Finding(
+                        "DH-LINK-001",
+                        UNFINISHED,
+                        "routing",
+                        rel(path, root),
+                        number,
+                        "A link points at a file that is not there.",
+                        target,
+                        rel(path, root),
+                        "Point the link at the file's current location, or remove it if the "
+                        "file was retired.",
+                    )
+                )
+
+
 def _project_findings(
     catalog: ResourceCatalog,
     root: Path,
@@ -1325,6 +1548,7 @@ def _project_findings(
     check_context_guidance(root, findings)
     check_draft_owners(root, findings)
     check_stale_references(root, findings)
+    check_link_targets(root, findings)
     repeated = check_duplicated_rules(catalog, root, findings)
     return tuple(findings), repeated
 
@@ -1360,6 +1584,7 @@ def check_project(
         practice_localization=inspect_practice_localization(validated_catalog, root),
         starter_prompts=inspect_starter_prompts(root),
         relied_on=inspect_relied_on(root),
+        earlier_regions=inspect_earlier_regions(validated_catalog, root, adoption),
     )
 
 
@@ -1423,6 +1648,9 @@ def inspect_relied_on(root: Path) -> str:
         ).strip(" .;`")
         if plain.casefold() in RELIED_ON_NOTHING_PHRASES:
             return "nothing_named"
+        first = re.split(r"[.;:]", plain, maxsplit=1)[0].strip().casefold()
+        if RELIED_ON_NOTHING_RE.fullmatch(first):
+            return "nothing_named"
         return "named"
     return "absent"
 
@@ -1444,6 +1672,9 @@ def inspect_starter_prompts(root: Path) -> tuple[StarterPrompts, ...]:
             text = FENCED_CODE_RE.sub(" ", read_text(path))
         except OSError:
             continue
+        # Brackets inside inline code are command syntax or names, not prompts;
+        # a prompt that quotes code keeps its brackets.
+        text = INLINE_CODE_RE.sub("code", text)
         counts.append(
             StarterPrompts(
                 path=relative_path,

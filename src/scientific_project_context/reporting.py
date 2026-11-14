@@ -29,7 +29,7 @@ from .project import (
 )
 
 
-REPORT_SCHEMA_VERSION = 15
+REPORT_SCHEMA_VERSION = 16
 REPEATED_PASSAGES_SHOWN = 8
 HEALTH_VALIDATION_BOUNDARY = (
     "structure only; this does not check whether the science is right, whether the "
@@ -49,7 +49,7 @@ AGENT_ROUTE_SUMMARY = {
     "missing": "not active; this project has no `AGENTS.md`",
 }
 RELIED_ON_SUMMARY = {
-    "named": "named, so a change that touches it owes a check and an evidence note",
+    "named": "named, so a change that touches it owes one check and a sentence on what it rests on",
     "nothing_named": (
         "nothing named, so every change here stays exploratory until something is added"
     ),
@@ -532,6 +532,16 @@ def _initialization_context_adoption(
         if begin >= 0 and end_marker >= 0:
             end = end_marker + len(SCIENTIFIC_PRACTICE_END)
             adoption["suggested_practice_core"] = packaged_text[begin:end]
+    if practice_file is not None and practice_file.disposition == "retain":
+        # The text above the core is the project's, but the package changes it too;
+        # upgrade offers those lines, so the report carries the packaged file.
+        packaged_practice = practice_file.content.decode("utf-8")
+        installed_practice = observed_content(SCIENTIFIC_PRACTICE_PATH).decode("utf-8", "replace")
+        if (
+            packaged_practice.partition(SCIENTIFIC_PRACTICE_BEGIN)[0].replace("\r\n", "\n")
+            != installed_practice.partition(SCIENTIFIC_PRACTICE_BEGIN)[0].replace("\r\n", "\n")
+        ):
+            adoption["packaged_practice_file"] = packaged_practice
     retained_skill_files = {
         file.relative_path: file.content.decode("utf-8")
         for file in plan.files
@@ -753,6 +763,7 @@ def health_report(
             },
             "practice_notes": result.practice_localization,
             "relied_on": result.relied_on,
+            "earlier_package_text": [asdict(region) for region in result.earlier_regions],
         },
         "observed": result.counts,
         "findings": [asdict(finding) for finding in result.findings],
@@ -874,6 +885,18 @@ def _check_state_lines(report: Mapping[str, object]) -> list[str]:
     relied_on = state.get("relied_on")
     if relied_on in RELIED_ON_SUMMARY:
         lines.append(f"- {RELIED_ON_FIELD}: {RELIED_ON_SUMMARY[relied_on]}")
+
+    earlier = state.get("earlier_package_text")
+    if isinstance(earlier, list) and earlier:
+        described = "; ".join(
+            f"{item['region']} in `{item['path']}` ({item['version']})"
+            for item in earlier
+            if isinstance(item, Mapping)
+        )
+        lines.append(
+            f"- Text from an earlier package version: {described}. The upgrade mode of "
+            "spctx-project-context replaces it"
+        )
     return lines
 
 
@@ -1090,6 +1113,13 @@ def render_human(report: Mapping[str, object]) -> str:
         if suggested_agents_file:
             lines.append("  - Packaged AGENTS.md for review:")
             lines.extend(f"    {line}" for line in str(suggested_agents_file).splitlines())
+        packaged_practice_file = adoption.get("packaged_practice_file")
+        if packaged_practice_file:
+            lines.append(
+                "  - Packaged scientific-practice file, to compare with yours above the core "
+                "(yours is left unchanged):"
+            )
+            lines.extend(f"    {line}" for line in str(packaged_practice_file).splitlines())
         packaged_agents_file = adoption.get("packaged_agents_file")
         if packaged_agents_file:
             lines.append(
