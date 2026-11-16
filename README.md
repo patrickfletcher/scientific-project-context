@@ -1,9 +1,9 @@
 # Scientific Project Context
 
 A coding agent learns most of what it knows about your project from the files
-it can read. Scientific Project Context gives it an organized place to look: a
-few plain Markdown files in the repository that record what the project is
-for, how to run it, which data and decisions must not change, where the work
+it can read. Scientific Project Context gives it an organized place to look. A few plain
+Markdown files in the repository record what the project is for and how to run
+it. They also record which data and decisions must not change, where the work
 stands, and what is still undecided.
 
 It has three parts:
@@ -18,10 +18,9 @@ It has three parts:
 - **`spctx`**, a small command-line tool that adds the starter files without
   overwriting anything and reports what's set up.
 
-All three are meant mainly for agents to use. The aim is for the project's
-facts and rules to build up in a controlled way as the work goes on, each kept
-in one place where it's easy to find, with agents doing the upkeep as part of
-ordinary work rather than as a separate documentation chore. You keep the final
+All three are meant mainly for agents to use. The aim is for the project's facts and rules to build up in a controlled way as
+the work goes on, each kept in one place where it's easy to find. Agents do the
+upkeep as part of ordinary work, not as a separate documentation chore. You keep the final
 say on how it all evolves: everything is plain Markdown in your repository, so
 you can edit it yourself, though usually you'll just ask your agent.
 
@@ -57,20 +56,20 @@ Existing files are never overwritten. If your project already has an
 step 3 covers that, with your approval. If you use Claude Code, add `--claude`
 to these commands (see [Which agents it works with](#which-agents-it-works-with)).
 
-When it finishes, the report names the Python interpreter `spctx` ran from.
-Copy that path for the next step.
+When it finishes, the report prints a `Context tools` line naming the
+environment `spctx` runs from and how to upgrade it. Your agent copies it into
+`AGENTS.md` in the next step.
 
 **3. Ask your agent to set things up.** Open the project with your coding agent
 and ask:
 
 ```text
 Use the spctx-project-context skill to set up this project's context.
-spctx is in the environment at <the Python path from the init report>.
 Tell me what needs my review when you're done.
 ```
 
-The skill tells the agent to read through the project first, fill in the
-starter files from what it finds, and ask you only about what it can't work out
+The skill tells the agent to read through the project first and fill in the
+starter files from what it finds. It asks you only about what it can't work out
 for itself, such as what a result means or which inputs must never change. Read
 what it wrote and correct anything that's off.
 
@@ -97,9 +96,9 @@ Four skills cover the moments that need more care:
   analysis or a model refit for the paper. It asks the agent to name the main
   way the change could go wrong and the smallest check that would catch it.
 - **`spctx-literature`**: finding, checking, and citing outside sources such as
-  papers, datasets, and software. It asks the agent to look up each source
-  rather than cite it from memory, say what it actually read, and note the
-  conditions a published result holds under before the project uses it.
+  papers, datasets, and software. It asks the agent to look up each source rather than cite it from memory, and
+to say what it actually read. Before the project uses a published result, the
+agent notes the conditions it holds under.
 - **`spctx-public-writing`**: text for readers outside the work, such as a
   README, a methods section, or a figure caption, drafted only from facts the
   project can support.
@@ -174,7 +173,8 @@ you can run them yourself too.
 | Command | What it does |
 | --- | --- |
 | `spctx init <project>` | Adds any missing starter files and never overwrites existing ones. `--dry-run` previews; `--claude` adds the Claude Code pointers. |
-| `spctx check <project>` | Reports what's set up and what isn't yet, without changing anything. It describes the project rather than grading it. `--json` gives the same report in machine-readable form. |
+| `spctx check <project>` | Reports what's set up and what isn't yet, without changing anything. It describes the project rather than grading it. `--inventory` measures each context document and lists the files that name it. `--json` gives the same report in machine-readable form. |
+| `spctx upgrade <project>` | Brings the project's packaged text up to the installed version, keeping your own wording and trigger phrasings. `--dry-run` shows each change first. It does not install `spctx` itself. |
 | `spctx sync-index <project>` | Regenerates `.context/index.md`, the list of context documents. `--dry-run` previews. |
 
 Add `--help` to any command for its options.
@@ -186,8 +186,9 @@ python -m pip install --upgrade git+https://github.com/patrickfletcher/scientifi
 ```
 
 Then ask your agent to use the spctx-project-context skill to bring the project
-up to date. It compares your files with the new version and reports what it
-changed.
+up to date. It runs `spctx upgrade`, which replaces only packaged text that an
+earlier version shipped, and then handles what needs judgment: anything you
+edited, and new suggestions for your own files. It reports what it changed.
 
 You can also ask the agent to do both, for example "There's a new version of
 scientific-project-context. Install it in this project's environment and bring
@@ -197,9 +198,9 @@ if none is recorded, it looks up where the current version came from, or asks.
 ## Trying it out
 
 We're looking for feedback on usage in real projects. Use it the way you normally
-work. Don't tidy anything up for its benefit, and after setup, don't name a
-skill unless the agent fails to find one: whether it finds the right one by
-itself is part of what's being tested.
+work. Don't tidy anything up for its benefit. After setup, don't name a skill unless
+the agent fails to find one: whether it finds the right one by itself is part of
+what's being tested.
 
 The most useful things to hear about, roughly in this order:
 

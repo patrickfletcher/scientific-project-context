@@ -10,13 +10,26 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "template"
 sys.path.insert(0, str(ROOT / "src"))
+sys.path.insert(0, str(ROOT / "tools"))
 
 from scientific_project_context import health  # noqa: E402
+import style_metrics  # noqa: E402
+
+INLINE_CODE = re.compile(r"`[^`\n]*`")
+COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
 
 
 class ScientistFacingStarterContractTests(unittest.TestCase):
     def read(self, relative_path: str) -> str:
         return (TEMPLATE / relative_path).read_text(encoding="utf-8")
+
+    def flat(self, relative_path: str) -> str:
+        """The file with whitespace collapsed, so line wrapping cannot break a phrase."""
+
+        return " ".join(self.read(relative_path).split())
+
+    def section(self, text: str, start: str, end: str) -> str:
+        return text[text.index(start) : text.index(end)]
 
     def test_shipped_markdown_is_byte_consistent(self) -> None:
         """These files are compared byte for byte, so their formatting cannot vary."""
@@ -98,61 +111,70 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
         self.assertIn("about one screen", project)
         self.assertIn("**Current findings and limits**", project)
         self.assertNotIn("input and procedure identity", project)
-        skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
+        skill = self.flat(".agents/skills/spctx-project-context/SKILL.md")
         for phrase in (
-            "still not context: it is a log",
-            "not an event\nsuch as a run finishing",
-            "rewrite it as current state instead of\ntrimming entries",
-            "change that rule as well, or the log grows back",
+            "is a log, not context",
+            "It does not name an event such as a run finishing",
+            "rewrite it as current state. Do not trim entries",
+            "change that rule too, or the log grows back",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
 
-    def test_shipped_text_keeps_governance_vocabulary_out(self) -> None:
-        """Real use copied the starter's promotion and ownership terms into project prose."""
+    def test_shipped_text_uses_the_glossary_terms(self) -> None:
+        """Trials copied this product's role, gate, and level words into their prose.
 
+        The words to avoid live in `.context/glossary.md`, so one list drives both
+        the writing and this test. Inline code is ignored, so a skill can still name
+        an earlier field title it reads.
+        """
+
+        glossary = (ROOT / ".context" / "glossary.md").read_text(encoding="utf-8")
+        avoided: list[str] = []
+        for line in glossary.splitlines():
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            if line.startswith("|") and len(cells) == 3 and cells[2] != "Avoid":
+                avoided.extend(re.findall(r"`([^`]+)`", cells[2]))
+        self.assertGreater(len(avoided), 20)
         for path in sorted(TEMPLATE.rglob("*.md")):
-            text = path.read_text(encoding="utf-8").casefold()
-            for term in ("promot", "authoritative source", "authoritative home", "domain authority"):
+            text = INLINE_CODE.sub(" ", COMMENT.sub(" ", path.read_text(encoding="utf-8")))
+            for term in avoided:
                 with self.subTest(path=path.relative_to(TEMPLATE).as_posix(), term=term):
-                    self.assertNotIn(term, text)
+                    self.assertIsNone(re.search(rf"\b{re.escape(term)}\b", text, re.IGNORECASE))
 
-    def test_shipped_text_names_people_and_inputs_rather_than_authority_and_ownership(self) -> None:
-        """A second trial pass still found authority, ownership, and decision-gate wording."""
+    def test_procedural_sentences_stay_short(self) -> None:
+        """Long packed sentences were the hardest instructions to follow; lists replace them."""
 
-        for path in sorted(TEMPLATE.rglob("*.md")):
-            text = path.read_text(encoding="utf-8").casefold()
-            for pattern in (
-                r"\bauthority\b",
-                r"\bowners?\b",
-                r"\bowns\b",
-                r"without a decision",
-                r"changed silently",
-                # Trials turned these role titles into gates in small groups.
-                r"responsible scientist",
-                r"research lead",
-                r"signs it off",
-            ):
-                with self.subTest(path=path.relative_to(TEMPLATE).as_posix(), pattern=pattern):
-                    self.assertIsNone(re.search(pattern, text))
+        procedural = [
+            *sorted((TEMPLATE / ".agents/skills").glob("*/SKILL.md")),
+            TEMPLATE / "AGENTS.md",
+            TEMPLATE / ".context/scientific-practice.md",
+        ]
+        long: list[str] = []
+        for path in procedural:
+            for sentence in style_metrics.sentences(path.read_text(encoding="utf-8")):
+                if sentence.startswith(("Purpose:", "Use when:", "Read when:", "Update when:")):
+                    continue
+                if style_metrics.word_count(sentence) > 25:
+                    long.append(f"{path.relative_to(TEMPLATE).as_posix()}: {sentence[:90]}")
+        self.assertEqual([], long)
 
     def test_starter_keeps_proposals_codes_and_conflicts_in_their_place(self) -> None:
         """Real use grew numbered codes, hedged adopted text, and ranked the safeguards."""
 
-        agents = self.read("AGENTS.md")
-        self.assertIn("Name things by what they are rather than by numbered codes", agents)
-        conflicts = agents[agents.index("## When Guidance Conflicts") : agents.index("## Working Style")]
-        self.assertIn("is not settled by rank: ask the user", conflicts)
+        agents = self.flat("AGENTS.md")
+        self.assertIn("Name things by what they are, not by numbered codes", agents)
+        conflicts = self.section(agents, "## When Guidance Conflicts", "## Working Style")
+        self.assertIn("rank does not settle it: ask the user", conflicts)
         self.assertIn("For exploratory work, follow the user's current instructions", conflicts)
-        self.assertNotIn("scientific-practice.md` when", conflicts)
-        self.assertIn("without a user name or version number", agents)
+        self.assertIn("copy the `Context tools` line that `spctx init` prints", agents)
         project = self.read(".context/project.md")
         self.assertIn("**Protected inputs**", project)
         self.assertIn("Keep ideas not yet adopted here", project)
         self.assertIn("**What this builds on**", project)
 
     def test_agents_file_prompts_for_essentials_and_states_ownership(self) -> None:
-        agents = self.read("AGENTS.md")
+        agents = self.flat("AGENTS.md")
         for phrase in (
             "## Project Essentials",
             "**Environment**",
@@ -162,25 +184,26 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
             # Real use showed agents reporting the command missing and working around it.
             "**Context tools**",
             "`spctx check .`",
+            "`spctx upgrade . --dry-run`",
             "## Where Facts Live",
             "this project's vocabulary",
-            # Real use showed the exploratory default and writing rule must be always read.
+            "If the project keeps a glossary, use its terms and avoid its listed words",
             # The strict reproducibility standard belongs to publication alone.
             "a public version that reproduces a published result for any reader",
-            "leave out what did not happen, what stayed unchanged, and who approved it",
+            "Leave out what did not happen, what stayed unchanged, and who approved it",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, agents)
 
     def test_context_skill_teaches_placement_before_drafting(self) -> None:
-        skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
+        skill = self.flat(".agents/skills/spctx-project-context/SKILL.md")
         placement = skill.index("## 2. Put Each Fact in the Right Place")
         drafting = skill.index("## 4. Draft the Compact Context")
         self.assertLess(placement, drafting)
         for phrase in (
-            "copied into all three places",
-            "which environment it is installed in",
-            "readable by an\ninterested outsider",
+            "gets copied into all three places",
+            "copy the line that the `spctx init` report prints",
+            "readable by an interested outsider",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
@@ -201,36 +224,36 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
     def test_literature_skill_identifies_reads_and_bounds_outside_sources(self) -> None:
         """Three trials invented source-strength labels and citation rules, and unchecked recollections steered design."""
 
-        skill = " ".join(self.read(".agents/skills/spctx-literature/SKILL.md").split())
+        skill = self.flat(".agents/skills/spctx-literature/SKILL.md")
         for phrase in (
             "Never write an identifier, title, author list, year, or venue from memory",
             "Mark a reference you have not looked up as recalled",
             "Resolve a persistent identifier",
-            "whether a retraction, correction, or expression of concern exists",
+            "Check whether a retraction, correction, or expression of concern exists",
             "Say what you read: full text, abstract, title only",
             "Separate what the authors measured from what they concluded",
             "Cite the primary source for a primary finding",
-            "Use the project's existing list of sources if it has one",
-            "\"No study found\" describes that search, not the world",
+            "If the project already keeps a list of sources, use it",
+            '"No study found" describes that search, not the world',
             "name the assumption that carries a result from one to the other",
             "If you cannot reach the source from here, say so and mark it unchecked",
             "goes through `spctx-scientific-change`",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
-        writing = " ".join(self.read(".agents/skills/spctx-public-writing/SKILL.md").split())
+        writing = self.flat(".agents/skills/spctx-public-writing/SKILL.md")
         self.assertIn("Cite only sources checked with `spctx-literature`", writing)
 
     def test_public_writing_skill_owns_audience_stage_and_currency(self) -> None:
-        skill = self.read(".agents/skills/spctx-public-writing/SKILL.md")
+        skill = self.flat(".agents/skills/spctx-public-writing/SKILL.md")
         for phrase in (
             "## 1. Name the Reader and What They Must Do",
             "## 2. Establish the Project's Stage",
-            "exploratory",
-            "relied on, and published",
+            "exploratory, depended on, and published",
             "Transient counts in durable text",
             "Check every command, path, filename, and option",
             "authorship, credit, acknowledgement, and citation",
+            "If the reader is not clear, name the one you assume and continue",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
@@ -243,7 +266,7 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
     def test_context_skill_localizes_the_practice_contract_from_real_sources(self) -> None:
         """The extension point existed for months and went unused because nothing named it."""
 
-        skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
+        skill = self.flat(".agents/skills/spctx-project-context/SKILL.md")
         self.assertIn("| localize | 1, 10, 13 |", skill)
         for phrase in (
             "## 10. Make the Practice Contract This Project's",
@@ -270,47 +293,47 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
                 self.assertIn(phrase, section)
 
     def test_scientific_change_uses_the_relied_on_list_as_its_trigger(self) -> None:
-        """Anything is exploratory until someone decides to rely on it."""
+        """Anything is exploratory until someone decides that later work depends on it."""
 
-        skill = " ".join(self.read(".agents/skills/spctx-scientific-change/SKILL.md").split())
-        self.assertIn("that short list is the default test", skill)
+        skill = self.flat(".agents/skills/spctx-scientific-change/SKILL.md")
+        self.assertIn("is the default test", skill)
         # Real use found presence in the list too mechanical; a real dependency counts.
-        self.assertIn("unless something already depends on the result", skill)
-        self.assertIn("exploratory until someone decides to rely on it", skill)
-        self.assertIn("propose it when the work looks load-bearing", skill)
-        self.assertIn("**What later work relies on**", self.read(".context/project.md"))
+        self.assertIn("If something already depends on the result but is not listed, it is not exploratory", skill)
+        self.assertIn("stays exploratory until someone decides that later work will depend on it", skill)
+        self.assertIn("That decision belongs to the user", skill)
+        self.assertIn("**What later work depends on**", self.read(".context/project.md"))
 
     def test_scientific_change_keeps_exploratory_work_in_the_reply_and_on_the_question(self) -> None:
         """Real use recorded every run and engineered around compute one approved step at a time."""
 
-        skill = " ".join(self.read(".agents/skills/spctx-scientific-change/SKILL.md").split())
+        skill = self.flat(".agents/skills/spctx-scientific-change/SKILL.md")
         for phrase in (
             # Every exploratory study met "name the question"; the decision and stop rule held.
             "name the decision it could change and when it will stop",
             "list it as a lead in your reply instead of running it",
             "adopt it as the working default, keep it as an option, or set it aside",
-            "do not build variants, guards, or retry chains",
-            "say in your reply what it showed",
-            "rather than adding an entry for the run",
+            "Do not build variants, guards, or retry chains",
+            "Say in your reply what it showed",
+            "do not add an entry for the run",
             "Lead with what the work showed about the scientific question",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
 
     def test_scientific_change_skill_can_pay_the_deferred_evidence_cost(self) -> None:
-        """Deferring evidence to promotion only works if promotion says how to pay it."""
+        """Deferring evidence only works if the procedure says how to pay it later."""
 
-        skill = self.read(".agents/skills/spctx-scientific-change/SKILL.md")
-        self.assertIn("rebuild its evidence", skill)
+        skill = self.flat(".agents/skills/spctx-scientific-change/SKILL.md")
+        self.assertIn("rebuild its evidence from what exists", skill)
         self.assertIn("A gap is a finding to report, not a blank to fill", skill)
 
     def test_context_skill_covers_upgrading_to_a_new_package_version(self) -> None:
         skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
         self.assertIn("## 9. Upgrade to a New Package Version", skill)
-        self.assertIn("spctx check . --diff", skill)
-        upgrade = skill[skill.index("## 9. Upgrade") : skill.index("## 10.")]
-        # The core carries most changes between versions, and unnumbered work gets skipped.
-        self.assertIn("Where the scientific-practice core differs", upgrade)
+        upgrade = self.section(skill, "## 9. Upgrade", "## 10.")
+        # Byte replacement belongs to the command; agents dropped trigger categories doing it by hand.
+        self.assertIn("spctx upgrade . --dry-run", upgrade)
+        self.assertIn("--replace-edited", upgrade)
         steps = [line.split(".", 1)[0] for line in upgrade.splitlines() if line[:1].isdigit()]
         # An earlier package shipped this list with a step number repeated.
         self.assertEqual([str(n) for n in range(1, len(steps) + 1)], steps)
@@ -334,28 +357,30 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
     def test_practice_core_scales_evidence_to_what_depends_on_the_result(self) -> None:
         """One adopting project hand-wrote this boundary twice because the core lacked it."""
 
-        practice = self.read(".context/scientific-practice.md")
-        core = practice[
-            practice.index("<!-- BEGIN SPCTX SCIENTIFIC PRACTICE CORE v1 -->") : practice.index(
-                "<!-- END SPCTX SCIENTIFIC PRACTICE CORE v1 -->"
-            )
-        ]
+        practice = " ".join(self.read(".context/scientific-practice.md").split())
+        core = self.section(
+            practice,
+            "<!-- BEGIN SPCTX SCIENTIFIC PRACTICE CORE v1 -->",
+            "<!-- END SPCTX SCIENTIFIC PRACTICE CORE v1 -->",
+        )
         for phrase in (
             "## What Will Depend on the Result",
             "**Exploratory**, the default",
-            "**Relied on**",
+            "**Depended on**",
             "**Published**",
-            "reproduces the published result for any reader who runs it",
-            "owed when later work starts to rely on a result, not when the result is produced",
+            "must reproduce the published result for any reader who runs it",
+            "This is the one strict reproducibility standard",
+            "Evidence is owed when later work starts to depend on a result, not when the result is produced",
             # Real use found the list test too mechanical; dependence is what counts.
-            "A dependency is real whether or not it has been listed yet",
-            "a reference recalled rather than looked up is marked as recalled",
+            "A dependency is real whether or not it is listed yet",
+            "Mark a reference you recall but have not looked up as recalled",
             # A level may relax evidence, never protection, honesty, or who decides.
-            "protected material stays protected",
+            "Protected inputs stay protected",
             # Real use narrated compliance after every step; the rules are met by acting.
-            "met by what you do rather than by saying so",
-            "permission to run a step is not",
+            "Meet them by what you do, not by saying so",
+            "Permission to run a step is not evidence",
             "not retelling it in every later summary",
+            "Change a protected input only when the request clearly means to",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, core)
@@ -385,28 +410,28 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
         self.assertIn("not a guard to build into code", skill)
 
     def test_context_skill_maintenance_gates_staleness_and_finds_readers_of_retired_files(self) -> None:
-        skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
+        skill = self.flat(".agents/skills/spctx-project-context/SKILL.md")
         self.assertIn("Exploratory results need neither", skill)
         # Retiring a document once broke a script that read it by path.
-        self.assertIn("Search code, notebooks, scripts, and configuration for the source's path", skill)
-        self.assertIn("Leave out user names and version numbers", skill)
+        self.assertIn("It lists every file in the repository that names the document", skill)
+        self.assertIn("It has no user names", skill)
 
     def test_install_on_request_uses_the_recorded_source_never_a_public_index(self) -> None:
         # The package name is unpublished, so installing it by name could fetch someone else's package.
-        skill = " ".join(self.read(".agents/skills/spctx-project-context/SKILL.md").split())
+        skill = self.flat(".agents/skills/spctx-project-context/SKILL.md")
         self.assertIn("install a new version of scientific-project-context (`spctx`)", skill)
         self.assertIn("Never install this package by name from a public package index", skill)
-        self.assertIn("Record the command that upgrades `spctx`", skill)
-        self.assertIn("the command that upgrades it there from the source it came from", self.read("AGENTS.md"))
+        self.assertIn("Use the upgrade command in the instruction file's `Context tools` line", skill)
 
     def test_upgrade_restores_its_own_procedure_first_and_works_from_packaged_text(self) -> None:
         """An upgrade followed the project's older copy, and wrote always-read lines from the core."""
 
-        skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
-        upgrade = skill[skill.index("## 9. Upgrade") : skill.index("## 10.")]
-        self.assertIn("1. If this skill's own body differs from the packaged one, restore it first", upgrade)
+        upgrade = self.section(
+            self.flat(".agents/skills/spctx-project-context/SKILL.md"), "## 9. Upgrade", "## 10."
+        )
+        self.assertIn("1. If this skill's own body differs from the packaged one, run `spctx upgrade .` first", upgrade)
         self.assertIn("Compare the rest of the instruction file with the packaged one", upgrade)
-        self.assertIn("A restatement for a different reader or moment\n   is not a duplicate", upgrade)
+        self.assertIn("A restatement for a different reader or moment is not a duplicate", upgrade)
 
     def test_scientific_change_skill_stops_at_the_exploratory_level(self) -> None:
         skill = self.read(".agents/skills/spctx-scientific-change/SKILL.md")
@@ -443,25 +468,26 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
 
     def test_primary_context_route_activates_maintenance_and_scientific_practice(self) -> None:
         agents = self.read("AGENTS.md")
-        route = agents[agents.index("<!-- BEGIN SPCTX PROJECT CONTEXT ROUTING v1 -->") :]
         self.assertLess(
             agents.index("<!-- BEGIN SPCTX PROJECT CONTEXT ROUTING v1 -->"),
             agents.index("## Project Essentials"),
         )
+        route = " ".join(agents[agents.index("<!-- BEGIN SPCTX PROJECT CONTEXT ROUTING v1 -->") :].split())
         for phrase in (
             ".context/project.md",
-            "rewrite that part of the context in place",
-            "belong in Git and the conversation",
+            "Rewrite that part in place",
+            "Keep run history, unchanged items, and approvals in Git and the conversation",
             # Every trial project wrote this default by hand before the route carried it.
-            "Work here is exploratory unless",
-            "Exploratory work needs no review marker, review document, or evidence record",
+            "Work is exploratory unless",
+            "Write no review marker, review document, or evidence record",
             "Before a side investigation, name the decision it could change",
             "Change a protected input only when the request clearly means to",
             "spctx-project-context/SKILL.md",
             "scientific-practice.md",
             "spctx-scientific-change/SKILL.md",
             "spctx-public-writing/SKILL.md",
-            "reviews, or upgrades context",
+            "spctx-literature/SKILL.md",
+            "refresh, review, or upgrade context",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, route)
@@ -469,17 +495,16 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
     def test_the_index_is_the_one_list_of_context_documents(self) -> None:
         """Real use kept four separately maintained lists of the same documents."""
 
-        agents = self.read("AGENTS.md")
+        agents = " ".join(self.read("AGENTS.md").split())
         route = agents[agents.index("<!-- BEGIN SPCTX PROJECT CONTEXT ROUTING v1 -->") :]
-        self.assertIn("`.context/index.md` for the list of every other context document", route)
-        self.assertIn("the index is generated, never edited by hand", route)
-        self.assertIn("Keep no other list of them", agents)
+        self.assertIn("`.context/index.md` lists every other context document", route)
+        self.assertIn("The index is generated; never edit it by hand", route)
+        self.assertIn("Keep no other list", agents)
         project = self.read(".context/project.md")
         self.assertIn("keep no list of them here", project)
-        skill = self.read(".agents/skills/spctx-project-context/SKILL.md")
+        skill = self.flat(".agents/skills/spctx-project-context/SKILL.md")
         self.assertIn("Do not keep another list of them", skill)
-        # Upgrade stays general: `check` names the file, so the skill carries no history.
-        upgrade = skill[skill.index("## 9. Upgrade") : skill.index("## 10.")]
+        upgrade = self.section(skill, "## 9. Upgrade", "## 10.")
         self.assertIn("Resolve what `spctx check .` reports about the index", upgrade)
         self.assertNotIn("README", upgrade)
         index = self.read(".context/index.md")
@@ -489,19 +514,22 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
     def test_context_skill_splits_by_trigger_and_reviews_context(self) -> None:
         """Trials grew context in shapes the log rule did not name and needed audits to find them."""
 
-        skill = " ".join(self.read(".agents/skills/spctx-project-context/SKILL.md").split())
+        skill = self.flat(".agents/skills/spctx-project-context/SKILL.md")
         for phrase in (
             "Split by why a passage changes, not by how long a document is",
-            "narration of when and how a number was measured are logs as well",
+            "narration of when and how a number was measured",
             "A plan is finite",
-            "copies a measured number or a decision only as a link",
+            "Copy a measured number or a decision into context only as a link",
+            "Write a procedure, protocol, or test method as numbered steps, one action per step",
+            "keep the project's terms in one glossary",
             "| review | 1, 6, 12, 13 |",
             "## 12. Review Context",
+            "Run `spctx check . --inventory`",
             "Look for contradictions first",
             "Write the result as a short dated report outside `.context/`",
             # Markers lingered on documents the user had asked for.
-            "only when it holds an interpretation you drafted that nobody has confirmed",
-            "When nothing did, do not ask",
+            "only if the document holds an interpretation you drafted that nobody has confirmed",
+            "If nothing changed, do not ask",
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, skill)
@@ -509,13 +537,14 @@ class ScientistFacingStarterContractTests(unittest.TestCase):
     def test_upgrade_reconciles_overrides_and_lists_what_earlier_versions_left(self) -> None:
         """Every trial wrote overrides, and old wording and code outlived the text that caused them."""
 
-        skill = " ".join(self.read(".agents/skills/spctx-project-context/SKILL.md").split())
-        upgrade = skill[skill.index("## 9. Upgrade") : skill.index("## 10.")]
+        upgrade = self.section(
+            self.flat(".agents/skills/spctx-project-context/SKILL.md"), "## 9. Upgrade", "## 10."
+        )
         for phrase in (
-            "Upgrade on the branch others merge from",
+            "Upgrade on the branch that others merge from",
             "Compare the rest of the practice file with the packaged one",
-            "adding `--claude` when the project has pointer skills",
-            "keep the lines specific to this project and delete the restatement",
+            "offer to rename it to `What later work depends on`",
+            "Keep the lines specific to this project, and delete the restatement",
             "List what earlier versions of this system left in the project's own text and code",
             "code only on an explicit request",
         ):

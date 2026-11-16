@@ -3,15 +3,25 @@
 ## Start Here
 
 <!-- BEGIN SPCTX PROJECT CONTEXT ROUTING v1 -->
-Read `.context/project.md` at the start of work for the project's current state, and `.context/index.md` for the list of every other context document and when to read it. Open only what the task needs.
+Read `.context/project.md` at the start of work. It gives the project's current state. `.context/index.md` lists every other context document and when to read it. Open only what the task needs.
 
-Work here is exploratory unless `.context/project.md` lists it under what later work relies on. Move quickly, keep negative and odd results, and give a consequential choice a one-line reason where it is made. Exploratory work needs no review marker, review document, or evidence record: say in your reply what it showed and that it is provisional. Before a side investigation, name the decision it could change; if none, list it as a lead instead.
+Work is exploratory unless `.context/project.md` lists it under what later work depends on. For exploratory work:
 
-When work changes an answer, the current focus, a protected input, or what later work relies on, rewrite that part of the context in place; a run that changes none of these changes no context. Run history, what stayed unchanged, and who approved what belong in Git and the conversation. After adding, renaming, or removing a document under `.context/`, run `spctx sync-index .`; the index is generated, never edited by hand.
+- Move quickly, and keep negative and odd results.
+- Give each consequential choice a one-line reason where you make it.
+- Write no review marker, review document, or evidence record. Say in your reply what the work showed and that it is provisional.
+- Before a side investigation, name the decision it could change. If it could change none, list it as a lead.
 
-Procedures: `.agents/skills/spctx-project-context/SKILL.md` sets up, refreshes, reviews, or upgrades context; `.agents/skills/spctx-scientific-change/SKILL.md`, with `.context/scientific-practice.md`, covers changes to anything later work relies on and results about to be shared or published; `.agents/skills/spctx-literature/SKILL.md` covers finding, checking, and citing outside sources; `.agents/skills/spctx-public-writing/SKILL.md` covers text for readers outside this work.
+Update context only when work changes an answer, the current focus, a protected input, or what later work depends on. Rewrite that part in place. Keep run history, unchanged items, and approvals in Git and the conversation. After you add, rename, or remove a document under `.context/`, run `spctx sync-index .`. The index is generated; never edit it by hand.
 
-Change a protected input only when the request clearly means to; if a change would touch one as a side effect, say what would change and ask once. If an instruction conflicts with the scientific safeguards about something later work relies on, ask the user.
+Use these procedures:
+
+- `.agents/skills/spctx-project-context/SKILL.md` to set up, refresh, review, or upgrade context.
+- `.agents/skills/spctx-scientific-change/SKILL.md`, with `.context/scientific-practice.md`, to change what later work depends on or to prepare a result for publication.
+- `.agents/skills/spctx-literature/SKILL.md` to find, check, and cite outside sources.
+- `.agents/skills/spctx-public-writing/SKILL.md` to write for readers outside this work.
+
+Change a protected input only when the request clearly means to. If a change would touch one as a side effect, say what would change and ask once. If an instruction conflicts with the scientific safeguards about what later work depends on, ask the user.
 <!-- END SPCTX PROJECT CONTEXT ROUTING v1 -->
 
 Do not scan every policy, proposal, or reference document. Follow the smallest relevant route and stop when the target and check are clear.
@@ -25,7 +35,9 @@ This repository uses Scientific Project Context on itself. Root-specific facts a
 - **Run and test**: from the repository root — `python -m unittest discover -s tests` and `python -m compileall -q src tools`.
 - **Reinstall after changing packaged resources**: `python -m pip install .`, then `spctx --version`. The current `.venv/` has no pip; use `uv pip install . --python .venv\Scripts\python.exe` there.
 - **Verify built artifacts**: `python tools\check_package_artifacts.py --source-root . --direct-wheel <wheel> --sdist <sdist> --sdist-wheel <sdist-built-wheel>`.
-- **Context tools**: `spctx check .` after changing context files; `spctx sync-index . --dry-run` then `spctx sync-index .` when a context document is added, renamed, or removed, or its opening lines change.
+- **After tagging a release**: record its packaged-text digests with `python tools/record_release_digests.py <ref>=<version> ...`, listing every release from `8315b53=0.1.0.dev22` on and never the current source version. `check` and `upgrade` recognize only recorded versions.
+- **Shipped writing**: follow `.context/glossary.md`; `python tools/style_metrics.py` reports sentence lengths, and the starter tests hold procedural sentences to 25 words.
+- **Context tools**: `spctx check .` after changing context files; `spctx sync-index . --dry-run` then `spctx sync-index .` when a context document is added, renamed, or removed, or its opening lines change; `spctx upgrade . --dry-run` after the template changes, to see what an adopting project would receive.
 - **Protected inputs**: packaged resources in `template/` and recorded trial observations in `.context/evaluation.md`. Changing them requires explicit review.
 - **Conventions**: standard library only in `src/`; no runtime dependencies. Keep `template/` and the root `.agents/skills/` copies identical, and keep every shipped Markdown file LF-terminated.
 

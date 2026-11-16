@@ -10,120 +10,116 @@ Use when: writing or revising a README, user or contributor guide, methods or re
 
 Before acting, say that you are using `spctx-public-writing` and name the reader
 you are writing for. If the reader is not clear, name the one you assume and
-continue; the user can correct it.
+continue. The user can correct it.
 
 ## 1. Name the Reader and What They Must Do
 
 Public text fails when it is written for the repository instead of a person.
-State, in one line each:
+State in one line each:
 
-- **Who reads this** — a new user, an external collaborator, a reviewer, a
-  reader of the paper, a future maintainer, or the authors themselves.
-- **What they already know** — the field and methods they can be assumed to
-  understand, and the project-specific vocabulary they cannot.
-- **What they must be able to do afterward** — run it, judge whether the
-  evidence supports the claim, reuse the data, reproduce a figure, or decide
-  whether to read further.
+- **Who reads this**: a new user, an external collaborator, a reviewer, a reader
+  of the paper, a future maintainer, or the authors themselves.
+- **What they already know**: the field and methods they understand, and the
+  project vocabulary they do not.
+- **What they must do afterward**: run it, judge a claim's evidence, reuse the
+  data, reproduce a figure, or decide whether to read on.
 
-Different readers need different documents. Do not merge a user guide, a
-methods description, and a status report into one file because they describe
-the same work.
+Different readers need different documents. Do not merge a user guide, a methods
+description, and a status report into one file because they describe the same
+work.
 
 ## 2. Establish the Project's Stage
 
-How much a sentence may claim depends on where the work actually is.
+How much a sentence may claim depends on where the work is.
 `.context/scientific-practice.md` defines the levels and what each one owes:
-exploratory, relied on, and published. Read
-`.context/project.md` for current evidence and limits, then name the level the
-text is being written at.
+exploratory, depended on, and published. Read `.context/project.md` for the
+current evidence and limits. Then name the level of the text you are writing.
 
-Writing above the level the work has reached is the common way public text goes
-wrong. Something nothing depends on yet may be described, not concluded from.
-"We found" and "these data are consistent with" are different claims.
+Public text most often goes wrong by claiming more than the work's level
+supports. If nothing depends on a result yet, describe it; do not conclude from
+it. "We found" and "these data are consistent with" are different claims.
 
-Publishing is itself a decision to rely on a result. If drafting would move a
-result to a level it has not earned, that is a scientific change rather than a
-wording choice; hand it to `spctx-scientific-change` instead of settling it in
-prose.
+Publishing is a decision to depend on a result. If a draft would move a result
+to a level it has not earned, that is a scientific change, not a wording choice.
+Hand it to `spctx-scientific-change`.
 
 ## 3. Write Only From Confirmed Facts
 
-Draft from `.context/project.md`, the context documents its index lists, the code, and existing
-public documentation. Do not infer a result, a number, or a mechanism that the
-project does not state.
+Draft from `.context/project.md`, the context documents its index lists, the
+code, and existing public documentation. Do not infer a result, a number, or a
+mechanism that the project does not state.
 
-- Mark anything unconfirmed rather than smoothing it into the prose.
+- Mark anything unconfirmed. Do not smooth it into the prose.
 - Cite only sources checked with `spctx-literature` at the depth the text
-  claims, and never a reference written from memory.
+  claims. Never cite a reference from memory.
 - Do not restate a number the project has not recorded. If a count, tolerance,
-  or effect size is needed and absent, ask or leave it explicitly open.
-- Prefer linking the source of a fact over copying it. Once a public document
-  is where a fact lives, internal context links to it instead of keeping a
-  shadow copy.
+  or effect size is needed and absent, ask, or leave it open.
+- Link to the source of a fact rather than copying it. Once a public document
+  holds a fact, internal context links to it.
 
 ## 4. Keep Each Fact in One Place
 
 Public documentation holds purpose in plain language, setup, commands, and
-outputs. Agent instructions hold operational constraints. Project context holds
+outputs. Agent instructions hold operational rules. Project context holds
 scientific purpose, current state, findings, risks, and open decisions. Write
-the fact where it belongs and link from the others.
+each fact where it belongs, and link to it from the others.
 
-Two specific leaks are common and worth checking for by name:
+Check for two common leaks:
 
-- **Internal detail in public text** — agent-only constraints, internal
-  vocabulary, or repository mechanics a reader does not need.
-- **Transient counts in durable text** — test totals, row counts, file counts,
-  or verification tallies that will be wrong after the next run. Put them in a
-  generated run summary, or state them with the date and input they describe.
+- **Internal detail in public text**: agent-only rules, internal vocabulary, or
+  repository mechanics that a reader does not need.
+- **Transient counts in durable text**: test totals, row counts, file counts, or
+  verification tallies that change with the next run. Put them in a generated
+  run summary, or give the date and input they describe.
 
 ## 5. Write in Ordinary Language
 
-Anything a collaborator reads should also be readable by an interested outsider
-in the field.
+A collaborator's text should also be readable by an interested outsider in the
+field.
 
-- Lead with the question, what was measured, the result, and the important
-  limitation. Implementation detail comes after.
-- Use ordinary scientific and engineering English. Do not import vocabulary from
-  a tool, template, or internal discussion into text with its own terms.
+- Lead with the question, what was measured, the result, and the main limit.
+  Implementation detail comes after.
+- Use ordinary scientific and engineering English. Do not bring in vocabulary
+  from a tool, template, or internal discussion.
 - Define abbreviations and specialized statistical terms on first use. Explain
-  detail in familiar language rather than removing it; do not strip useful
-  scientific or statistical precision to make a sentence shorter.
-- State each limitation once, where it belongs, rather than repeating it in
-  every section.
+  detail in familiar words; do not remove useful scientific or statistical
+  precision to shorten a sentence.
+- State each limit once, where it belongs.
 - Keep exact identifiers, paths, and schema names in code blocks, tables, or
-  methods notes where reproducibility needs them. Use plain labels in narrative
-  text and figure captions.
+  methods notes. Use plain labels in narrative text and figure captions.
 - Give units, biological or experimental replication, and repeated-measure
-  structure wherever a number could otherwise be misread.
+  structure wherever a number could be misread.
 
 ## 6. Keep It True to the Implementation
 
-Public text goes stale faster than internal context because nothing forces it to
-change. Before finishing:
+Public text goes stale faster than internal context, because nothing forces it
+to change. Before you finish:
 
 - Check every command, path, filename, and option against the current code.
-- Check that described outputs still exist and are still produced the stated way.
-- Remove or update anything describing behavior that has since changed.
+  `spctx check` reports paths and links in `README.md` and `docs/` that are not
+  there.
+- Check that the described outputs still exist and are produced the stated way.
+- Remove or update anything that describes behavior that has changed.
 
-If a described behavior turns out to be wrong rather than merely stale, that is a
-scientific or implementation finding, not a wording problem. Report it.
+If a described behavior is wrong rather than stale, that is a scientific or
+implementation finding, not a wording problem. Report it.
 
 ## 7. Leave These Judgments to the User
 
 Draft, but do not decide. The user confirms:
 
-- claims, their strength, and their domain
-- authorship, credit, acknowledgement, and citation
-- licensing, data availability, embargo, and access
-- ethics, consent, governance, and community permissions
-- support and maintenance commitments
+- claims, their strength, and their domain;
+- authorship, credit, acknowledgement, and citation;
+- licensing, data availability, embargo, and access;
+- ethics, consent, governance, and community permissions;
+- support and maintenance commitments.
 
-Say in your reply which of these you drafted for the user to decide; a draft in
+Say in your reply which of these you drafted for the user to decide. A draft in
 progress needs no review marker. A clean repository, a passing pipeline, or a
 well-written paragraph does not make a claim true.
 
 ## 8. Report
 
-Say which reader you wrote for, which facts you used, what you marked as
-unconfirmed, what you found stale or wrong, and which judgments still need the
-user's decision.
+Say which reader you wrote for and which facts you used. Then say what you
+marked as unconfirmed, what you found stale or wrong, and which judgments still
+need the user's decision.

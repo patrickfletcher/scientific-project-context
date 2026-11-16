@@ -54,7 +54,7 @@ The practice core draws on recurring cross-domain guidance. These sources justif
 
 Deterministic tools are useful for exact resource identity, safe placement, read-only structural reports, and bounded marker updates. They cannot infer project meaning, decide that another document is warranted, confirm scientific content, or turn structural consistency into release readiness.
 
-The package therefore prefers preview, exclusive creation, explicit selection, stable report boundaries, and refusal on ambiguity. Project files become project-owned snapshots; automatic semantic migration would require a separately justified design.
+The package therefore prefers preview, exclusive creation, explicit selection, stable report boundaries, and refusal on ambiguity. Replacing packaged text with a newer release is such a bounded marker update, so `spctx upgrade` does it, and only where the text matches a recorded release; an agent doing it by hand once dropped every packaged trigger category. Project files become project-owned snapshots; automatic semantic migration would require a separately justified design.
 
 ## Why Evidence Claims Are Layered
 

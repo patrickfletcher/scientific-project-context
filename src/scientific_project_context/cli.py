@@ -4,10 +4,13 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 from typing import Sequence, TextIO
 
 from . import DISTRIBUTION_NAME, __version__
 from .health import HealthError, check_project, diff_managed_regions
+from .inventory import inspect_context_inventory
+from .upgrade import apply_upgrade, plan_upgrade
 from .project import (
     INITIALIZATION_MODES,
     OperationError,
@@ -25,6 +28,7 @@ from .reporting import (
     initialization_report,
     render_human,
     render_json,
+    upgrade_report,
 )
 from .resources import ResourceCatalog, ResourceError, load_packaged_resources
 
@@ -75,7 +79,28 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Show how regions that track the packaged version differ.",
     )
+    check.add_argument(
+        "--inventory",
+        action="store_true",
+        help="Measure each context document and list every file that names one.",
+    )
     check.add_argument("--json", action="store_true", help="Emit a versioned JSON report.")
+
+    upgrade = subparsers.add_parser(
+        "upgrade",
+        help=(
+            "Bring this project's packaged text up to the installed version. "
+            "It does not install spctx."
+        ),
+    )
+    upgrade.add_argument("target", help="Initialized project directory to upgrade.")
+    upgrade.add_argument("--dry-run", action="store_true", help="Plan and show diffs without writing.")
+    upgrade.add_argument(
+        "--replace-edited",
+        action="store_true",
+        help="Also replace packaged regions that were edited here. Move wording to keep first.",
+    )
+    upgrade.add_argument("--json", action="store_true", help="Emit a versioned JSON report.")
 
     sync_index = subparsers.add_parser(
         "sync-index",
@@ -155,13 +180,49 @@ def _run_check(
         differences = (
             diff_managed_regions(loaded_catalog, args.target) if args.diff else None
         )
-        report = health_report(result, differences=differences)
+        inventory = (
+            inspect_context_inventory(result.target)
+            if args.inventory and isinstance(result.target, Path)
+            else None
+        )
+        report = health_report(result, differences=differences, inventory=inventory)
         _emit(report, as_json=args.json, stream=output)
         return 0
     except (HealthError, ResourceError, OSError, ValueError) as exc:
         report = health_error_report(
             str(exc),
             target=args.target,
+            resource_bundle_sha256=(
+                loaded_catalog.bundle_sha256 if loaded_catalog is not None else None
+            ),
+        )
+        _emit(report, as_json=args.json, stream=output)
+        return 2
+
+
+def _run_upgrade(
+    args: argparse.Namespace,
+    *,
+    catalog: ResourceCatalog | None,
+    output: TextIO,
+) -> int:
+    loaded_catalog = catalog
+    try:
+        if loaded_catalog is None:
+            loaded_catalog = load_packaged_resources()
+        plan = plan_upgrade(loaded_catalog, args.target, replace_edited=args.replace_edited)
+        if plan.blocked or args.dry_run or not plan.has_changes:
+            _emit(upgrade_report(plan, dry_run=args.dry_run), as_json=args.json, stream=output)
+            return 2 if plan.blocked else 0
+        applied = apply_upgrade(plan)
+        _emit(upgrade_report(plan, dry_run=False, applied=applied), as_json=args.json, stream=output)
+        return 0
+    except (OperationError, ResourceError, OSError, UnicodeError, ValueError) as exc:
+        report = error_report(
+            str(exc),
+            operation="upgrade",
+            target=args.target,
+            dry_run=args.dry_run,
             resource_bundle_sha256=(
                 loaded_catalog.bundle_sha256 if loaded_catalog is not None else None
             ),
@@ -224,4 +285,6 @@ def main(
         return _run_check(args, catalog=catalog, output=output)
     if args.command == "sync-index":
         return _run_sync_index(args, catalog=catalog, output=output)
+    if args.command == "upgrade":
+        return _run_upgrade(args, catalog=catalog, output=output)
     parser.error(f"unknown command: {args.command}")  # pragma: no cover

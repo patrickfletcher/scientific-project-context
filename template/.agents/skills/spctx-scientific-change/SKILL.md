@@ -1,117 +1,158 @@
 ---
 name: spctx-scientific-change
-description: Apply the project's scientific safeguards to a change that touches something later work relies on, or to a result about to be shared or published. Use when changing an analysis, filtering or exclusion rule, notebook, model or simulation, statistical or numerical method, acquisition or instrument workflow, calibration, scientific API, figure or table that the project's list of what later work relies on names, or when preparing results for a paper, poster, release, or handoff — for example "exclude these trials from the main analysis", "change the calibration we rely on", "refit the model for the paper", "redo the figure for the paper". Exploratory analysis needs no skill; the project's instructions cover it. Do not use for formatting, packaging, renaming, or routine maintenance.
+description: Apply the project's scientific safeguards to a change that touches what later work depends on, or to a result about to be published. Use when changing an analysis, filtering or exclusion rule, notebook, model or simulation, statistical or numerical method, acquisition or instrument workflow, calibration, scientific API, figure or table that the project's list of what later work depends on names, or when preparing results for a paper, poster, release, or handoff — for example "exclude these trials from the main analysis", "change the calibration we depend on", "refit the model for the paper", "redo the figure for the paper". Exploratory analysis needs no skill; the project's instructions cover it. Do not use for formatting, packaging, renaming, or routine maintenance.
 ---
 
 # Scientific Change
 
-Purpose: plan, perform, and check scientifically material work without forcing a separate validation bureaucracy onto simple projects.
+Purpose: plan, perform, and check work that later work depends on, without a separate validation bureaucracy.
 Use when: creating or changing an analysis, data transformation or exclusion rule, notebook, model or simulation, numerical or statistical method, acquisition or instrument workflow, calibration, scientific API, figure or table, or any output that supports a reported claim.
 
 Before acting, say in one line that you are using `spctx-scientific-change`.
-If the change touches nothing later work relies on and is not about to be
-published, say so and stop: it is exploratory, and the project's instructions
-already cover it.
+If the change touches nothing later work depends on and will not be published,
+say so and stop. The work is exploratory, and the project's instructions cover it.
 
-## 1. State the Scientific Question and Risk
+## 1. State the Question and the Level
 
-Read `.context/scientific-practice.md`, `.context/project.md`, and only the other context documents the index in `.context/index.md` shows are relevant. Read `AGENTS.md` for project rules and routing, but do not expect it to duplicate the scientific contract.
+Read `.context/scientific-practice.md` and `.context/project.md`. Read only the
+other context documents that `.context/index.md` shows are relevant. Read
+`AGENTS.md` for project rules; it does not repeat the scientific contract.
 
 State only what is relevant:
 
-- the research question, decision, behavior, result, or claim being changed,
-- which intended-use level in the practice contract applies, and what already depends on the result,
-- the main way it could be scientifically wrong even if the workflow completes or the result looks plausible,
-- the intended domain and limits, and
-- affected protected inputs, curated decisions, generated outputs, and public behavior.
+- the question, decision, behavior, result, or claim being changed;
+- which intended-use level in the practice contract applies, and what already depends on the result;
+- the main way it could be wrong even if the workflow completes or the result looks plausible;
+- its intended domain and limits;
+- the protected inputs, curated decisions, generated outputs, and public behavior it affects.
 
-Do not infer from a filename who may change something or who decides what it means.
+Do not decide from a filename who may change something or what it means.
 
-Say the level plainly, because the rest of this procedure is gated on it. The
-project's compact context says what later work relies on, and that short list is
-the default test: a change that touches nothing on it is exploratory, whatever
-it is and however much work it took, unless something already depends on the
-result without having been listed. A parameter, a plot, a helper, or a whole
-method comparison is exploratory until someone decides to rely on it.
+Say the level plainly, because the rest of this procedure depends on it. The
+project's list of what later work depends on is the default test:
 
-Before starting a side investigation, name the decision it could change and
+- If the change touches nothing on that list, it is exploratory, however large it is.
+- If something already depends on the result but is not listed, it is not exploratory. Propose adding it to the list.
+
+A parameter, a plot, a helper, or a whole method comparison stays exploratory
+until someone decides that later work will depend on it.
+
+Before you start a side investigation, name the decision it could change and
 when it will stop. If it could change none, list it as a lead in your reply
-instead of running it. When it ends, say what it settled: adopt it as the
-working default, keep it as an option, or set it aside. Comparing candidate
-methods is a side investigation like any other. When a computation does not fit
-the time or memory available, make it smaller, with fewer samples, features, or
-permutations, or ask; do not build variants, guards, or retry chains to make it
-fit. Engineering that answers no scientific question is the most expensive kind
-of exploratory work.
+instead of running it. When it ends, say what it settled: adopt it as the working
+default, keep it as an option, or set it aside. A comparison of candidate methods
+is a side investigation too.
 
-When the work is exploratory, say in your reply what it showed, what was done,
-and that it is provisional, then stop here; the remaining steps belong to
-results something already depends on or that are about to be published. A
-working default may be adopted while exploring. Change project context only when
-the current answer to one of its questions changes, and then rewrite that answer
-rather than adding an entry for the run.
+If a computation does not fit the time or memory available, make it smaller:
+use fewer samples, features, or permutations, or ask. Do not build variants,
+guards, or retry chains to make it fit. Engineering that answers no scientific
+question is the most expensive kind of exploratory work.
 
-Continue past this step only when the change touches something on that list,
-when a result is about to be published, or when the user decides that later work
-will rely on the result. That decision is the user's to make; propose it when
-the work looks load-bearing, and add the result to the list in the same turn.
+When the work is exploratory, do this and then stop here:
+
+1. Say in your reply what it showed, what was done, and that it is provisional.
+2. Adopt a working default if one is useful, and say that it is provisional.
+3. Change project context only if the current answer to one of its questions changed. Rewrite that answer; do not add an entry for the run.
+
+Continue past this step only in one of these cases:
+
+- the change touches something on the list;
+- a result is about to be published;
+- the user decides that later work will depend on the result.
+
+That decision belongs to the user. If the work looks like something later work
+will depend on, propose it, and add the result to the list in the same turn.
 
 ## 2. Propose the Smallest Useful Check
 
-Skip this step while the work is exploratory. It begins when later work starts
-to rely on the result.
+Skip this step while the work is exploratory.
 
-Ask in plain language: "What is the smallest check or observation that could reveal a consequential error? What should happen, within what tolerance or uncertainty, and why?"
+Ask in plain language: "What is the smallest check or observation that could
+show a consequential error? What should happen, within what tolerance or
+uncertainty, and why?"
 
-Draft an answer from project evidence when possible. Establish the expected signal before inspecting the changed result when practical. Let the user correct scientific judgment; never invent an expected result. When the expected value comes from published work, check its source with `spctx-literature`.
+- Draft an answer from project evidence when possible.
+- Set the expected signal before you inspect the changed result, when practical.
+- Let the user correct scientific judgment. Never invent an expected result.
+- If the expected value comes from published work, check its source with `spctx-literature`.
 
-Prefer a positive or negative control, reference material or sample, clean-kernel notebook rerun, held-out case, sensitivity check, reference acquisition, analytical or manufactured solution, numerical-convergence or limiting-case check, backend comparison, or targeted failure case. These are examples, not requirements. When practical, demonstrate that the check fails for a known bad or pre-change behavior.
+Prefer a check of one of these kinds. They are examples, not requirements.
+
+- a positive or negative control, or a reference material or sample;
+- a clean-kernel notebook rerun or a held-out case;
+- a sensitivity check or a reference acquisition;
+- an analytical or manufactured solution, or a convergence or limiting-case check;
+- a backend comparison or a targeted failure case.
+
+When practical, show that the check fails for a known bad or earlier behavior.
 
 Choose one check, not a suite. Do not let one check grow into a benchmark
-program unless the result now being relied on actually needs one.
+program unless the depended-on result needs one.
 
 ## 3. Plan Evidence and Staleness
 
-Scale the record to the level. A result later work relies on inside this
-project needs a sentence and a date: what was observed, what was expected, and
-when. A published result needs the full identity below, and a public version of
-the work that reproduces it for any reader who runs it.
+Scale the record to the level:
 
-When something produced at a lower level starts to be relied on,
-rebuild its evidence from what already exists: the code and configuration
-in force at the time, the outputs, and the project's own notes. Record what
-you could rebuild and what you could not.
-A gap is a finding to report, not a blank to fill, and an expected signal
-nobody held at the time cannot be supplied now.
+- **Depended on inside this project**: one sentence and a date. Say what was observed, what was expected, and when.
+- **Published**: the full identity below, and a public version of the work that reproduces the result for any reader who runs it.
 
-For an executed check, retain a compact evidence record:
+When something produced at a lower level starts to be depended on, rebuild its
+evidence from what exists. Use the code and configuration in force at the time,
+the outputs, and the project's notes. Say what you could rebuild and what you could
+not. A gap is a finding to report, not a blank to fill. You cannot supply an
+expected signal that nobody held at the time.
 
-- observed result beside the expected signal,
-- script, notebook, procedure, acquisition record, or command and enough instruction to repeat it,
-- material input origin, transformation or exclusion path, model, calibration, method, settings, and randomness identity,
-- code revision and environment/backend/hardware identity when relevant,
-- run date, observed uncertainty or variation, review state, and documented limits.
+For an executed check, keep a compact evidence record:
 
-Machine identity such as code revision, environment, and settings is best
-written by the code beside its output; link to it rather than copying it into
-context.
+- the observed result beside the expected signal;
+- the script, notebook, procedure, acquisition record, or command, and how to repeat it;
+- material input origin, transformation or exclusion path, model, calibration, method, settings, and randomness;
+- code revision and environment, backend, or hardware when relevant;
+- run date, observed uncertainty or variation, review state, and limits.
 
-Name what the evidence establishes: implementation verification, scientific validation for an intended use, computational reproducibility with the same inputs and conditions, independent replicability with new data or evidence, or generalizability beyond the tested setting. Do not use one label to imply another.
+Let the code write machine detail, such as the code revision, environment, and
+settings, beside its output. Link to it from context; do not copy it.
 
-Identify which prior evidence and downstream outputs must be rerun. If they are not rerun, mark them stale and do not continue to describe the behavior as validated.
+Name what the evidence establishes: implementation verification, scientific
+validation for an intended use, computational reproducibility, independent
+replicability, or generalizability. Do not use one label to imply another.
+
+Name the earlier evidence and downstream outputs that must be rerun. If you do
+not rerun them, mark them stale, and stop describing the behavior as validated.
 
 ## 4. Choose the Smallest Home
 
-Keep one behavior, check, and evidence record in `.context/project.md` while it remains readable. Use another source only under the three conditions in `spctx-project-context`: the detail persists across sessions, updates independently, and no longer fits clearly. Run `spctx sync-index .` after adding one.
-
-Several validation states may justify a validation table; non-obvious artifact provenance and rerun rules may justify an artifact specification; recurring scientific assumptions may justify a compact scientific guide. These are examples, not required filenames. Reuse an existing test plan, data dictionary, benchmark record, method note, or public specification when it already holds the fact.
+Keep one behavior, check, and evidence record in `.context/project.md` while it
+stays readable. Use another context document only under the conditions in
+`spctx-project-context`, and run `spctx sync-index .` after you add one. If an
+existing test plan, data dictionary, benchmark record, method note, or public
+specification already holds the fact, use it.
 
 ## 5. Perform the Work and Check It
 
-Establish the check and expected signal before or alongside the broader work when practical. Perform the affected analysis, acquisition, calculation, or test and record the actual result, uncertainty, and limits. Check existence alone is not validation.
+Set the check and expected signal before or alongside the broader work, when
+practical. Perform the analysis, acquisition, calculation, or test. Record the
+actual result, uncertainty, and limits. A check that exists is not validation.
 
-When a result something depends on fails to reproduce, keep the discrepant result, find what changed, and mark the affected evidence or outputs stale. That is a judgment for the moment it happens, not a guard to build into code. Perform a known correction, record a consequential choice for review, or ask for missing scientific judgment as appropriate.
+If a depended-on result fails to reproduce:
+
+1. Keep the discrepant result.
+2. Find what changed.
+3. Mark the affected evidence or outputs stale.
+
+That is a judgment for the moment, not a guard to build into code. Make a known
+correction, record a consequential choice for review, or ask for the missing
+scientific judgment.
 
 ## 6. Report the Boundary
 
-Lead with what the work showed about the scientific question. Report the level you worked at, what was checked, what remains provisional or stale, which outputs are affected, and what scientific judgment still needs review. Put logistics such as run time, memory, and retries last, or leave them to the run record. Say so when you deliberately did less because nothing depends on the result yet, so the reader can disagree. Do not generalize beyond the documented evidence domain.
+Lead with what the work showed about the scientific question. Then report:
+
+- the level you worked at, and anything you deliberately did less of because nothing depends on the result yet;
+- what was checked, and what remains provisional or stale;
+- which outputs are affected;
+- what scientific judgment still needs review.
+
+Report the level you worked at in one line. Put logistics such as run time,
+memory, and retries last, or leave them to the run record. Do not generalize
+beyond the evidence.

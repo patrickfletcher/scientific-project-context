@@ -4,7 +4,7 @@ Purpose: explain the order of the next few product moves.
 Read when: planning beyond the current task.
 Update when: trial evidence changes the sequence or a real release effort begins.
 
-## Now - Measure dev26 in the Author's Trials
+## Now - Measure dev26 and dev27 in the Author's Trials
 
 dev26 carries a review of four trials: the exploratory default in the routing
 block, the user in place of roles, the strict reproducibility standard reserved
@@ -12,12 +12,16 @@ for publication, a review mode, an upgrade step that lists what earlier versions
 left behind, and `spctx-literature`. `.context/evaluation.md` maps each change
 to its observation.
 
+dev27 adds `spctx upgrade`, the inventory, the install-source line, and a plain
+technical writing style with one word per concept. Upgrading some repositories
+by hand to dev26 and others with the command to dev27 compares the two paths.
+
 Before upgrading, take the fixed-prompt baseline in `.context/evaluation.md` in
 each of the author's trial repositories. Upgrade each in a fresh session told
 only the skill and the mode, rerun the prompts, and watch for two weeks with the
 measures listed there. Who else receives dev26 is decided after.
 
-Hold the rest still while that runs: the eight files, three commands, report
+Hold the rest still while that runs: the eight files, four commands, report
 fields, and check identifiers. Record which version each trial runs.
 
 ## Next - The Remaining Trial Questions

@@ -401,6 +401,108 @@ class PackageHealthCliTests(unittest.TestCase):
         self.assertEqual([], payload["state"]["earlier_package_text"])
         self.assertEqual([], payload["findings"])
 
+    def test_public_docs_are_checked_for_missing_paths_and_links(self) -> None:
+        (self.project / "docs").mkdir()
+        (self.project / "src").mkdir()
+        (self.project / "README.md").write_text(
+            "# Fixture\n\nRun `src/run.py`. See [the guide](docs/guide.md) and [usage](docs/usage.md).\n",
+            encoding="utf-8",
+        )
+        (self.project / "docs" / "usage.md").write_text("See [missing](gone.md).\n", encoding="utf-8")
+
+        _, payload = self.run_json()
+
+        public = sorted(
+            (i["check_id"], i["path"], i["evidence"])
+            for i in payload["findings"]
+            if i["category"] == "public-docs"
+        )
+        self.assertEqual(
+            [
+                ("DH-LINK-001", "README.md", "docs/guide.md"),
+                ("DH-LINK-001", "docs/usage.md", "gone.md"),
+                ("DH-STALE-001", "README.md", "src/run.py"),
+            ],
+            public,
+        )
+
+    def test_readme_repeating_context_is_reported_only_for_long_passages(self) -> None:
+        long_passage = (
+            "Every excluded recording needs a specific recorded reason that a reviewer can check "
+            "against the acquisition notes kept beside the raw data folder later."
+        )
+        short_passage = "Recordings shorter than ten minutes are excluded from the main cohort analysis."
+        (self.project / ".context" / "curation.md").write_text(
+            f"# Curation\n\nPurpose: curation.\nRead when: curation.\nUpdate when: curation.\n\n{long_passage}\n\n{short_passage}\n",
+            encoding="utf-8",
+        )
+        apply_index_sync(plan_index_sync(self.catalog, self.project))
+        (self.project / "README.md").write_text(f"# Fixture\n\n{long_passage}\n\n{short_passage}\n", encoding="utf-8")
+
+        _, payload = self.run_json()
+
+        pairs = [
+            (p["path"], p["other"], p["words"])
+            for p in payload["repeated_passages"]
+            if "README.md" in (p["path"], p["other"])
+        ]
+        self.assertEqual(1, len(pairs))
+        self.assertGreaterEqual(pairs[0][2], 20)
+
+    def test_inventory_measures_documents_and_finds_what_names_them(self) -> None:
+        """A retired document broke a script that read it by path; the search must be reliable."""
+
+        (self.project / ".context" / "findings.md").write_text(
+            "# Findings\n\nPurpose: answers.\nRead when: answers.\nUpdate when: an answer changes.\n\n"
+            "## Rates\n\nMeasured 2026-10-30 on the panel. See [project](project.md).\n",
+            encoding="utf-8",
+        )
+        apply_index_sync(plan_index_sync(self.catalog, self.project))
+        (self.project / "scripts").mkdir()
+        (self.project / "scripts" / "verify.py").write_text(
+            'FINDINGS = ".context/findings.md"\nOLD = ".context/retired.md"\n', encoding="utf-8"
+        )
+        (self.project / "scripts" / "history.py").write_text(
+            "# was .context/older.md at commit `abc1234`\n", encoding="utf-8"
+        )
+        (self.project / "results").mkdir()
+        (self.project / "results" / "notes.txt").write_text(".context/elsewhere.md\n", encoding="utf-8")
+        (self.project / ".gitignore").write_text("results/\n", encoding="utf-8")
+        before = tree_snapshot(self.project)
+
+        output = io.StringIO()
+        cli.main(["check", str(self.project), "--inventory", "--json"], catalog=self.catalog, stdout=output)
+        payload = json.loads(output.getvalue())
+
+        self.assertEqual(before, tree_snapshot(self.project))
+        inventory = payload["inventory"]
+        findings = next(d for d in inventory["documents"] if d["path"] == ".context/findings.md")
+        self.assertEqual(["scripts/verify.py"], findings["named_by"])
+        self.assertEqual(1, findings["sections"])
+        self.assertEqual(1, findings["dated_lines"])
+        self.assertEqual(1, findings["links_out"])
+        self.assertEqual("an answer changes.", findings["update_when"])
+        self.assertEqual(
+            [("scripts/verify.py", 2, ".context/retired.md")],
+            [(m["path"], m["line"], m["target"]) for m in inventory["missing"]],
+        )
+        self.assertNotIn("inventory", self.run_json()[1])
+        human = io.StringIO()
+        cli.main(["check", str(self.project), "--inventory"], catalog=self.catalog, stdout=human)
+        self.assertIn("Names of context documents that are not there: 1", human.getvalue())
+
+    def test_inventory_reads_directories_a_whitelist_gitignore_keeps(self) -> None:
+        (self.project / "docs").mkdir()
+        (self.project / "docs" / "notes.md").write_text("See `.context/project.md`.\n", encoding="utf-8")
+        (self.project / ".gitignore").write_text("*\n!*/\n!*.md\n", encoding="utf-8")
+
+        output = io.StringIO()
+        cli.main(["check", str(self.project), "--inventory", "--json"], catalog=self.catalog, stdout=output)
+
+        documents = json.loads(output.getvalue())["inventory"]["documents"]
+        project = next(d for d in documents if d["path"] == ".context/project.md")
+        self.assertIn("docs/notes.md", project["named_by"])
+
     def test_a_link_in_the_instruction_file_is_checked_too(self) -> None:
         agents = self.project / "AGENTS.md"
         agents.write_text(
@@ -450,6 +552,21 @@ class PackageHealthCliTests(unittest.TestCase):
                 )
                 self.assertEqual(expected, self.run_json()[1]["state"]["relied_on"])
 
+    def test_the_relied_on_field_is_read_under_its_new_and_earlier_titles(self) -> None:
+        """The field was renamed for plainer wording; no project has to rename it."""
+
+        project_context = self.project / ".context/project.md"
+        for title in ("What later work depends on", "What later work relies on"):
+            with self.subTest(title=title):
+                project_context.write_text(
+                    PROJECT_CONTEXT.replace(
+                        "**What later work relies on**: nothing yet",
+                        f"**{title}**: the saved curation table.",
+                    ),
+                    encoding="utf-8",
+                )
+                self.assertEqual("named", self.run_json()[1]["state"]["relied_on"])
+
     def test_a_missing_pointer_is_reported_when_the_project_uses_pointers(self) -> None:
         """A skill a newer version ships has no pointer until `init --claude` adds it."""
 
@@ -476,8 +593,8 @@ class PackageHealthCliTests(unittest.TestCase):
 
         practice = self.project / ".context/scientific-practice.md"
         old_core = practice.read_text(encoding="utf-8").replace(
-            "a plausible agent-generated explanation is not evidence.",
-            "a plausible agent-generated explanation is still not evidence.",
+            "A plausible agent-generated explanation is not evidence.",
+            "A plausible agent-generated explanation is still not evidence.",
         )
         practice.write_text(old_core, encoding="utf-8")
         agents = self.project / "AGENTS.md"
@@ -562,8 +679,8 @@ class PackageHealthCliTests(unittest.TestCase):
         practice = self.project / ".context/scientific-practice.md"
         practice.write_text(
             practice.read_text(encoding="utf-8").replace(
-                "a plausible agent-generated explanation is not evidence.",
-                "a plausible agent-generated explanation might be evidence.",
+                "A plausible agent-generated explanation is not evidence.",
+                "A plausible agent-generated explanation might be evidence.",
             ),
             encoding="utf-8",
         )

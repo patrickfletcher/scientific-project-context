@@ -9,6 +9,9 @@ from typing import Mapping, Sequence
 
 from . import DISTRIBUTION_NAME, __version__
 from .health import BROKEN, NOTED, UNFINISHED, HealthResult, ManagedDifference, RELIED_ON_FIELD
+from .installation import describe_installation
+from .inventory import ContextInventory
+from .upgrade import CURRENT, UpgradePlan, UpgradeResult
 from .project import (
     IndexSyncPlan,
     IndexSyncResult,
@@ -29,7 +32,7 @@ from .project import (
 )
 
 
-REPORT_SCHEMA_VERSION = 16
+REPORT_SCHEMA_VERSION = 17
 REPEATED_PASSAGES_SHOWN = 8
 HEALTH_VALIDATION_BOUNDARY = (
     "structure only; this does not check whether the science is right, whether the "
@@ -57,11 +60,12 @@ RELIED_ON_SUMMARY = {
     "absent": f"`{RELIED_ON_FIELD}` is no longer in `.context/project.md`",
 }
 INITIALIZED_TOOL_COMMANDS = (
+    ("spctx check .", "Report what the context files have set up."),
     (
-        "spctx sync-index . --dry-run",
-        "Preview the regenerated index of context documents.",
+        "spctx upgrade . --dry-run",
+        "Preview what a newer spctx would change in packaged text.",
     ),
-    ("spctx check .", "Check the context files for structural problems."),
+    ("spctx sync-index .", "Regenerate the index of context documents."),
 )
 
 # Machine states stay in the JSON report; these are their human equivalents.
@@ -649,6 +653,7 @@ def initialization_report(
                 for command, purpose in INITIALIZED_TOOL_COMMANDS
             ],
             "interpreter": sys.executable,
+            "installation": describe_installation(plan.target),
             "boundary": (
                 "optional bounded mechanics only; people and agents select actions, while "
                 "identified scientific/domain and project/data authorities retain their "
@@ -656,6 +661,93 @@ def initialization_report(
             ),
         }
     return report
+
+
+UPGRADE_BOUNDARY = (
+    "packaged text only: the routing block, the practice core, skill bodies, the packaged "
+    "part of skill descriptions, generated Claude pointers, and missing starter files; it "
+    "does not install spctx, insert a routing block, or judge whether the new guidance suits "
+    "this project"
+)
+UPGRADE_NEXT_STEP = (
+    "Use the upgrade mode of spctx-project-context for the steps that need judgment: "
+    "regions skipped as edited, offered instruction-file and practice-file lines, "
+    "duplicated rules, and what earlier versions left behind."
+)
+
+
+def upgrade_report(
+    plan: UpgradePlan,
+    *,
+    dry_run: bool,
+    applied: UpgradeResult | None = None,
+) -> dict[str, object]:
+    """Build the report for `spctx upgrade`."""
+
+    if dry_run and applied is not None:
+        raise ValueError("A dry-run report cannot contain an applied result.")
+    if plan.blocked:
+        result = "blocked"
+    elif not plan.has_changes:
+        result = "no_changes"
+    elif dry_run:
+        result = "planned"
+    elif applied is not None:
+        result = "upgraded"
+    else:
+        raise ValueError("A non-preview upgrade report requires an applied result.")
+    return {
+        "report_schema_version": REPORT_SCHEMA_VERSION,
+        "producer": {
+            "distribution": DISTRIBUTION_NAME,
+            "version": __version__,
+            "resource_bundle_sha256": plan.resource_bundle_sha256,
+        },
+        "operation": "upgrade",
+        "result": result,
+        "dry_run": dry_run,
+        "target": {"path": str(plan.target)},
+        "replace_edited": plan.replace_edited,
+        "regions": [asdict(region) for region in plan.regions],
+        "changed_files": list(applied.changed_files) if applied else [],
+        "created_files": list(applied.created_files) if applied else list(plan.created_files),
+        "blocked": list(plan.blocked),
+        "next_step": UPGRADE_NEXT_STEP,
+        "validation_boundary": UPGRADE_BOUNDARY,
+    }
+
+
+def _upgrade_lines(report: Mapping[str, object]) -> list[str]:
+    regions = [item for item in report.get("regions", []) if isinstance(item, Mapping)]
+    lines: list[str] = []
+    labels = {
+        "replaced": "Replaced",
+        "regenerated": "Regenerated",
+        "created": "Added",
+        "skipped_edited": "Skipped as edited here",
+        "reported": "Left alone",
+    }
+    for action, label in labels.items():
+        chosen = [item for item in regions if item["action"] == action]
+        if not chosen:
+            continue
+        lines.append(f"- {label}: {len(chosen)}")
+        for item in chosen:
+            version = f" (text from {item['from_version']})" if item.get("from_version") else ""
+            lines.append(f"  - `{item['path']}`: {item['region']}{version}")
+            if item.get("note"):
+                lines.append(f"    - {item['note']}")
+    current = sum(item["action"] == CURRENT for item in regions)
+    if current:
+        lines.append(f"- Already current: {current}")
+    for message in report.get("blocked", []) or []:
+        lines.append(f"- Blocked: {message}")
+    if report.get("dry_run"):
+        for item in regions:
+            if item.get("diff") and item["action"] in {"replaced", "skipped_edited", "regenerated"}:
+                lines.extend(["", "```diff", str(item["diff"]).rstrip("\n"), "```", ""])
+    lines.append(f"- Next: {report['next_step']}")
+    return lines
 
 
 def index_sync_report(
@@ -729,6 +821,7 @@ def health_report(
     result: HealthResult,
     *,
     differences: Sequence[ManagedDifference] | None = None,
+    inventory: ContextInventory | None = None,
 ) -> dict[str, object]:
     """Build the single machine/human report model for a project check.
 
@@ -771,6 +864,8 @@ def health_report(
     }
     if differences is not None:
         report["differences"] = [asdict(difference) for difference in differences]
+    if inventory is not None:
+        report["inventory"] = asdict(inventory)
     return report
 
 
@@ -900,6 +995,35 @@ def _check_state_lines(report: Mapping[str, object]) -> list[str]:
     return lines
 
 
+def _render_inventory(inventory: object) -> list[str]:
+    if not isinstance(inventory, Mapping):
+        return []
+    documents = [item for item in inventory.get("documents", []) if isinstance(item, Mapping)]
+    total = sum(int(item["words"]) for item in documents)
+    lines = [f"- Context documents: {len(documents)}, {total:,} words in total"]
+    for item in documents:
+        named_by = list(item["named_by"])
+        shown = ", ".join(f"`{name}`" for name in named_by[:4])
+        if len(named_by) > 4:
+            shown += f", and {len(named_by) - 4} more"
+        lines.append(
+            f"  - `{item['path']}`: {int(item['words']):,} words, {item['sections']} sections, "
+            f"{item['dated_lines']} dated lines, {item['links_out']} links out; "
+            + (f"named by {shown}" if named_by else "named by no other file")
+        )
+        lines.append(f"    - Update when: {item['update_when'] or 'missing'}")
+    missing = [item for item in inventory.get("missing", []) if isinstance(item, Mapping)]
+    if missing:
+        lines.append(f"- Names of context documents that are not there: {len(missing)}")
+        for item in missing:
+            lines.append(f"  - `{item['path']}:{item['line']}` names `{item['target']}`")
+    scanned = f"- Files read for references: {inventory.get('files_scanned')}"
+    if inventory.get("scan_limited"):
+        scanned += " (stopped at the limit; some files were not read)"
+    lines.append(scanned)
+    return lines
+
+
 def render_human(report: Mapping[str, object]) -> str:
     """Render a report without consulting operation state outside the payload."""
 
@@ -918,6 +1042,8 @@ def render_human(report: Mapping[str, object]) -> str:
             f"- Target: {target['path'] or 'unavailable'}",
         ]
     )
+    if report["operation"] == "upgrade" and "regions" in report:
+        lines.extend(_upgrade_lines(report))
     if report["operation"] == "check":
         lines.extend(_check_state_lines(report))
         observed = report.get("observed")
@@ -969,6 +1095,8 @@ def render_human(report: Mapping[str, object]) -> str:
                     f"  - Next: {finding['next_action']}",
                 ]
             )
+
+        lines.extend(_render_inventory(report.get("inventory")))
 
         differences = report.get("differences")
         if isinstance(differences, list):
@@ -1193,6 +1321,17 @@ def render_human(report: Mapping[str, object]) -> str:
                 f"    - This run used {interpreter}. `spctx` is reachable only from that "
                 "environment, so record it in `Project Essentials`."
             )
+        installation = tool_discovery.get("installation")
+        if isinstance(installation, Mapping):
+            lines.append(
+                "    - Suggested `Context tools` line for `Project Essentials`: "
+                f"{installation['context_tools_line']}"
+            )
+            if installation.get("machine_specific"):
+                lines.append(
+                    "    - A path in that line is outside this project and your home folder, "
+                    "so it holds only on this machine; say so where you record it."
+                )
     return "\n".join(lines) + "\n"
 
 

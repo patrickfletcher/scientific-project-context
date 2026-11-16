@@ -65,6 +65,8 @@ INVENTORY_SUMMARY_RE = re.compile(r"  - (?:Purpose|Read when): .+")
 
 DUPLICATE_MIN_WORDS = 12
 DUPLICATE_MAX_FINDINGS = 8
+DUPLICATE_PUBLIC_MIN_WORDS = 20
+PUBLIC_README = "README.md"
 DUPLICATE_WORD_RE = re.compile(r"[a-z0-9]+")
 FENCED_CODE_RE = re.compile(r"^```.*?^```", re.DOTALL | re.MULTILINE)
 INLINE_CODE_RE = re.compile(r"`[^`\n]*`")
@@ -88,7 +90,9 @@ BRACKETED_PROMPT_RE = re.compile(r"\[[^\]\n]+\](?!\()")
 PROMPTED_STARTER_PATHS = ("AGENTS.md", PROJECT_CONTEXT_PATH)
 
 # The compact context field that decides how much evidence a change owes.
-RELIED_ON_FIELD = "What later work relies on"
+RELIED_ON_FIELD = "What later work depends on"
+# Earlier titles of the same field, still read so no project has to rename it.
+RELIED_ON_EARLIER_FIELDS = ("What later work relies on",)
 RELIED_ON_NOTHING_PHRASES = frozenset(
     {"nothing", "nothing yet", "none", "none yet", "nothing so far", "not yet"}
 )
@@ -670,6 +674,7 @@ def check_agent_skill_drift(
         return
 
     if comparison.description not in {"packaged", "extended"}:
+        earlier_description = _earlier_description_version(relative_path.split("/")[2], content)
         findings.append(
             Finding(
                 "DH-SKILL-002",
@@ -677,8 +682,16 @@ def check_agent_skill_drift(
                 "agent-skill",
                 relative_path,
                 None,
-                "Agent Skill description no longer starts with the packaged text, so packaged trigger updates cannot reach this project.",
-                f"description: {comparison.description}",
+                (
+                    f"Agent Skill description starts with the text package version {earlier_description} shipped; the installed package ships a newer one."
+                    if earlier_description
+                    else "Agent Skill description no longer starts with the packaged text, so packaged trigger updates cannot reach this project."
+                ),
+                (
+                    f"description: earlier package text ({earlier_description})"
+                    if earlier_description
+                    else f"description: {comparison.description}"
+                ),
                 relative_path,
                 f'Restore the packaged description and add this project\'s example phrasings after "{SKILL_TRIGGER_SEPARATOR}", which keeps both.',
             )
@@ -908,6 +921,17 @@ def _earlier_region_version(root: Path, region: str) -> str | None:
     return earlier_package_version(region, block)
 
 
+def _earlier_description_version(skill_name: str, content: bytes) -> str | None:
+    """Name the earlier package version whose description precedes this project's phrasings."""
+
+    try:
+        description = parse_agent_skill_content(content).description
+    except OperationError:
+        return None
+    packaged_part = description.split(SKILL_TRIGGER_SEPARATOR, 1)[0].strip()
+    return earlier_package_version(f"description:{skill_name}", packaged_part)
+
+
 def _earlier_skill_version(skill_name: str, content: bytes) -> str | None:
     try:
         body = parse_agent_skill_content(content).body
@@ -944,13 +968,17 @@ def inspect_earlier_regions(
             if _link_kind(path) is not None or not path.is_file():
                 continue
             content = path.read_bytes()
-            if compare_agent_skill(content, _catalog_content(catalog, relative_path)).body != "modified":
-                continue
-            version = _earlier_skill_version(skill_name, content)
+            comparison = compare_agent_skill(content, _catalog_content(catalog, relative_path))
         except (OSError, KeyError, OperationError):
             continue
-        if version:
-            found.append(EarlierRegion(relative_path, "skill body", version))
+        if comparison.body == "modified":
+            version = _earlier_skill_version(skill_name, content)
+            if version:
+                found.append(EarlierRegion(relative_path, "skill body", version))
+        if comparison.description not in {"packaged", "extended"}:
+            version = _earlier_description_version(skill_name, content)
+            if version:
+                found.append(EarlierRegion(relative_path, "skill description", version))
     return tuple(found)
 
 
@@ -1365,7 +1393,7 @@ def _gitignore_rules(directory: Path) -> list[tuple[bool, bool, bool, re.Pattern
     return rules
 
 
-def _is_gitignored(root: Path, candidate: str) -> bool:
+def _is_gitignored(root: Path, candidate: str, *, is_directory: bool = False) -> bool:
     """Apply the repository's .gitignore files to one relative path, as Git would.
 
     Only `.gitignore` files inside the project are read; per-clone and global
@@ -1383,18 +1411,46 @@ def _is_gitignored(root: Path, candidate: str) -> bool:
 
     # An ignored directory cannot have anything below it re-included.
     for end in range(1, len(parts) + 1):
-        is_directory = end < len(parts)
+        component_is_directory = end < len(parts) or is_directory
         ignored = False
         for depth in range(end):
             relative = "/".join(parts[depth:end])
             for negated, directory_only, anchored, regex in rules_by_depth[depth]:
-                if directory_only and not is_directory:
+                if directory_only and not component_is_directory:
                     continue
                 if regex.fullmatch(relative if anchored else parts[end - 1]):
                     ignored = not negated
         if ignored:
             return True
     return False
+
+
+def _public_doc_paths(root: Path) -> list[Path]:
+    """The project's public documentation: `README.md` and Markdown under `docs/`."""
+
+    paths: list[Path] = []
+    readme = root / "README.md"
+    if readme.is_file() and _link_kind(readme) is None:
+        paths.append(readme)
+    docs = root / "docs"
+    if docs.is_dir() and _link_kind(docs) is None:
+        for path in _walk_plain_files(docs):
+            if path.suffix.casefold() == ".md" and not _is_gitignored(root, rel(path, root)):
+                paths.append(path)
+    return paths
+
+
+def _context_doc_paths(root: Path) -> list[Path]:
+    design_root = root / ".context"
+    if not design_root.is_dir():
+        return []
+    # The index routes to documents that may not exist yet, and its generated
+    # half is maintained by sync-index and checked by the routing checks.
+    return [
+        path
+        for path in _walk_plain_files(design_root)
+        if path.suffix.casefold() == ".md" and rel(path, root) != CONTEXT_INDEX_PATH
+    ]
 
 
 def check_stale_references(root: Path, findings: list[Finding]) -> None:
@@ -1409,17 +1465,10 @@ def check_stale_references(root: Path, findings: list[Finding]) -> None:
     too: it may exist only on the machine where the analysis runs.
     """
 
-    design_root = root / ".context"
-    if not design_root.is_dir():
-        return
     reported = 0
-    for path in _walk_plain_files(design_root):
-        if path.suffix.casefold() != ".md":
-            continue
-        # The index routes to documents that may not exist yet, and its generated
-        # half is maintained by sync-index and checked by the routing checks.
-        if rel(path, root) == CONTEXT_INDEX_PATH:
-            continue
+    public = set(_public_doc_paths(root))
+    for path in _context_doc_paths(root) + sorted(public):
+        category = "public-docs" if path in public else "routing"
         try:
             text = FENCED_CODE_RE.sub("", read_text(path))
         except OSError:
@@ -1446,10 +1495,10 @@ def check_stale_references(root: Path, findings: list[Finding]) -> None:
                     Finding(
                         "DH-STALE-001",
                         UNFINISHED,
-                        "routing",
+                        category,
                         rel(path, root),
                         number,
-                        "Context names a repository path that is not there.",
+                        ("Public documentation" if category == "public-docs" else "Context") + " names a repository path that is not there.",
                         candidate,
                         rel(path, root),
                         (
@@ -1461,7 +1510,7 @@ def check_stale_references(root: Path, findings: list[Finding]) -> None:
 
 
 def check_link_targets(root: Path, findings: list[Finding]) -> None:
-    """Report Markdown links in context and the instruction file whose target is missing.
+    """Report Markdown links in context, the instruction file, and public docs whose target is missing.
 
     Only whether the target exists is checked; nothing is opened or followed, and
     anchors are not checked. URLs, in-page anchors, paths outside the project, and
@@ -1473,13 +1522,9 @@ def check_link_targets(root: Path, findings: list[Finding]) -> None:
     agents = root / "AGENTS.md"
     if agents.is_file() and _link_kind(agents) is None:
         sources.append(agents)
-    design_root = root / ".context"
-    if design_root.is_dir():
-        sources.extend(
-            path
-            for path in _walk_plain_files(design_root)
-            if path.suffix.casefold() == ".md" and rel(path, root) != CONTEXT_INDEX_PATH
-        )
+    sources.extend(_context_doc_paths(root))
+    public = set(_public_doc_paths(root))
+    sources.extend(sorted(public))
     reported = 0
     for path in sources:
         try:
@@ -1515,7 +1560,7 @@ def check_link_targets(root: Path, findings: list[Finding]) -> None:
                     Finding(
                         "DH-LINK-001",
                         UNFINISHED,
-                        "routing",
+                        "public-docs" if path in public else "routing",
                         rel(path, root),
                         number,
                         "A link points at a file that is not there.",
@@ -1624,7 +1669,8 @@ def inspect_relied_on(root: Path) -> str:
     This one field decides how much evidence a change owes. Nothing here counts
     individual results: the default is that a project is exploratory, and the
     field exists so a project can name the exceptions. Reporting the state is
-    what gives promotion a moment; deciding to promote stays with the user.
+    what gives that decision a moment; making it stays with the user. The field's
+    earlier title is read too.
     """
 
     path = root / PROJECT_CONTEXT_PATH
@@ -1635,10 +1681,11 @@ def inspect_relied_on(root: Path) -> str:
     except OSError:
         return "not_inspected"
 
-    marker = f"**{RELIED_ON_FIELD}**"
+    markers = tuple(f"**{field}**" for field in (RELIED_ON_FIELD, *RELIED_ON_EARLIER_FIELDS))
     for line in text.splitlines():
         stripped = line.strip()
-        if not stripped.startswith(marker):
+        marker = next((item for item in markers if stripped.startswith(item)), None)
+        if marker is None:
             continue
         value = stripped[len(marker) :].lstrip(": ").strip()
         if not value or BRACKETED_PROMPT_RE.fullmatch(value):
@@ -1882,6 +1929,10 @@ def _duplicate_regions(
     if agents.is_file():
         regions.append(("AGENTS.md", _comparable_words(read_text(agents)), False))
 
+    readme = root / "README.md"
+    if readme.is_file() and _link_kind(readme) is None:
+        regions.append(("README.md", _comparable_words(read_text(readme)), False))
+
     context_root = root / ".context"
     if context_root.is_dir():
         for path in _walk_plain_files(context_root):
@@ -1935,6 +1986,10 @@ def check_duplicated_rules(
             if left_packaged and right_packaged:
                 continue
             runs = _shared_runs(left_words, right_words)
+            if PUBLIC_README in {left_label, right_label}:
+                # Public text and context may restate a fact for different readers;
+                # only a long copied passage is a second home for it.
+                runs = [run for run in runs if run[1] >= DUPLICATE_PUBLIC_MIN_WORDS]
             if not runs:
                 continue
             start, length = max(runs, key=lambda run: run[1])

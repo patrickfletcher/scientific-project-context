@@ -13,7 +13,7 @@ The public product is the installable Markdown resource bundle and the `spctx`
 CLI. Evaluation should answer four separate questions:
 
 1. Do built artifacts contain the exact intended resources and command surface?
-2. Do `init`, `check`, and `sync-index` preserve their documented filesystem and
+2. Do `init`, `check`, `sync-index`, and `upgrade` preserve their documented filesystem and
    reporting contracts?
 3. Do scientists and agents find and apply the guidance appropriately on real
    projects without disproportionate burden?
@@ -119,7 +119,7 @@ added during the trial in the author's own maintenance sessions.
 | T2 | A project pass with the skill named rewrote the compact file to about a fifth of its length, drafted a findings page under the review marker while flagging two numbers it had derived rather than copied, and retired four log documents. | Confirms the review-marker path for a drafted scientific summary. Whether the result holds through normal use is the open measure. |
 | T2 | Retiring those documents broke a project verification script that read them by path. The retire procedure covers links and routes, not code that reads a context file; the agent found the references and reported them. | dev24: the retire steps search code, notebooks, scripts, and configuration for the path and fix or report what reads it. |
 | T2 | The instruction file located `spctx` by absolute paths containing a user name, one per machine, plus a pinned version that went stale at the next upgrade, in a repository meant to be shared. | dev24: `Project Essentials` and the setup step ask for the environment's name and a repository- or home-relative path, without a user name or version. |
-| T2 | About forty analysis scripts hash their own source and stop with an error when it changes. The colleague attributed this to the core's request for file hashes beside outputs, but every guard predates dev23, which added that wording; the guards' error messages echo the older rules to mark changed evidence stale and keep discrepant results, and the project's own plan asked for checksums. The dev23 wording does not separate source from inputs, so it would reinforce the pattern. | dev24: the core asks code to record its version as a Git commit, settings, environment, and checksums only of inputs obtained from outside the project, and never to refuse to run because its source changed; `spctx-scientific-change` calls a failed reproduction a judgment for the moment, not a guard to build into code. |
+| T2 | About forty analysis scripts hash their own source and stop with an error when it changes. The colleague attributed this to the core's request for file hashes beside outputs, but every guard predates dev23, which added that wording; the guards' error messages echo the older rules to mark changed evidence stale and keep discrepant results, and the project's own plan asked for checksums. The dev23 wording does not separate source from inputs, so it would reinforce the pattern. | dev24: the core asks code to record its version as a Git commit, settings, environment, and checksums only of inputs obtained from outside the project, and never to refuse to run because its source changed; `spctx-scientific-change` treats a failed reproduction as something to judge when it happens, never as a check to build into code. |
 | T2 | The staleness rules read as an obligation at every level. The core's rerun-or-mark-stale line and the refresh step's matching sentence are ungated, and dev23 dropped the exploratory level's explicit release from staleness. | dev24: rerun-or-mark-stale applies only to what a relied-on result rests on, in the core and both skills, and the exploratory level again owes no staleness marking; keeping discrepant results stays an every-level rule. |
 | T2 | Ownership and authority wording outlived the dev23 pass: project and change authority in the context skill, owner and owns in the core and starter, material that must not change without a decision, and the starter's heading for protected material, which invited long lists. The project's shorter heading, naming the inputs themselves, read better. | dev24: a second plain-language pass names the people responsible instead, and the starter test now rejects authority, owner, owns, and the decision-gate phrase. The heading is Protected inputs, the name the instruction file and route already use, limited to inputs the work takes as given. |
 | T2 | Gathering every proposal awaiting a decision into one page removed most of the hedging from the adopted pages. The colleague suggested shipping it as a document type. | dev24, as a rule rather than a type, per `product.md`: the starter's unresolved-questions prompt asks to keep proposals in one place apart from adopted text. |
@@ -152,6 +152,11 @@ T3; there are no transcripts.
 | T2, T4 | `check` counted command syntax in inline code as unanswered prompts, read "nothing is frozen…" as a named list, and reported history pointers as missing paths. | dev26 fixes. |
 | T2, T3, T4 | Three projects invented labels for how strongly a source supports a statement and wrote their own citation-checking rule; one project's own review found unchecked recollections steering design rules. | dev26: `spctx-literature`. |
 | T2 | At a poster, claim limits held; the fixes were jargon and hedging; public writing's ask-and-wait lines stalled unattended work. | dev26: public writing names an assumed reader and continues. |
+| T1 | An upgrade done by hand dropped every packaged trigger category while restoring descriptions; later upgrades spent their effort checking bytes. | dev27: `spctx upgrade` replaces packaged text that matches a recorded release and keeps project phrasings; the skill keeps only judgment steps. |
+| T3 | The project's own context review measured documents, links, and dates with throwaway scripts. | dev27: `spctx check --inventory`. |
+| T2 | Retiring documents broke a verification script that read one by path; the search for readers was manual. | dev27: the inventory lists every file that names a context document. |
+| T1, T3 | Both projects adopted writing rules inspired by ASD-STE100; one project's review found short sentences alone did not stop stacked qualifiers. | dev27: shipped procedural text follows such rules, with lists and one instruction per sentence, enforced at 25 words. |
+| All | One concept carried several names in shipped text (relied on, depends on, load-bearing; focused source, context source). The author reported the relied-on wording as awkward. | dev27: `.context/glossary.md` drives the vocabulary test; the field is titled "What later work depends on", and `check` reads both titles. |
 
 ## Agent Skill Behavior Scenarios
 
@@ -213,7 +218,7 @@ the structural-only boundary intact.
 
 ## Next Useful Evidence
 
-- Before and after the dev26 upgrade in the author's trial repositories (T2
+- Before and after the dev26 or dev27 upgrade in the author's trial repositories (T2
   only with the colleague's agreement): fresh sessions, the same four prompts
   each time (the current state and next step; an exploratory analysis change
   chosen once per repository; a status note for a collaborator; finding and

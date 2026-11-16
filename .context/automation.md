@@ -24,10 +24,14 @@ publication readiness.
 | Command | Role | Boundary |
 | --- | --- | --- |
 | `spctx init` | Infer new/retrofit mode, install the exact eight-file starter including four canonical Agent Skills and an index listing any context documents already present, optionally add `.claude/skills/` pointer skills with `--claude`, retain occupied regular files, and report the activation and semantic handoff. | Never overwrites or merges project instructions or occupied skills and never initializes scientific meaning; unsafe structure blocks. |
-| `spctx check` | Report starter integrity, scientific-practice core integrity, Agent Skill structure, pointer-skill agreement, context-index integrity, review markers, and compact routing guidance. | Read-only; does not judge project meaning, prose adequacy, or repository organization. |
+| `spctx check` | Report starter integrity, scientific-practice core integrity, Agent Skill structure, pointer-skill agreement, context-index integrity, review markers, compact routing guidance, and missing paths and link targets in context and public docs. `--diff` shows how packaged regions differ; `--inventory` measures each context document and lists every file that names one. | Read-only; does not judge project meaning, prose adequacy, or repository organization. |
 | `spctx sync-index` | Regenerate `.context/index.md`: the packaged heading, then a link to every Markdown file under `.context/` with the `Purpose` and `Read when` lines from its top. | Derives entries only from current regular UTF-8 files; never discards text a project added to the index, and stops with instructions instead. |
+| `spctx upgrade` | Replace packaged text that matches a recorded earlier version: the routing block and practice core between their markers, skill bodies, and the packaged part of each description, keeping the project's phrasings. Regenerate Claude pointers that are still the generated stub, and add missing starter files. `--dry-run` shows each diff; `--replace-edited` also replaces regions the project edited. | Never inserts a routing block, edits outside these regions, follows a link, or installs `spctx`. Duplicated or unbalanced markers block the whole run. |
 
-`tools/check_package_artifacts.py` is the only repository-only product tool. It
+Three repository-only tools support maintainers and are not part of the
+installed CLI: `tools/record_release_digests.py` regenerates `history.py` from
+release refs, and `tools/style_metrics.py` reports sentence lengths for shipped
+text. `tools/check_package_artifacts.py`
 checks built wheel/sdist membership, metadata, resource identity, and direct
 versus sdist-built wheel parity. It is a maintainer verification tool, not part
 of the installed CLI.
@@ -90,6 +94,49 @@ tool's call. `check` reports the same state as `DH-ROUTE-006`, and `check
 --diff` shows the difference. Dry-run reports include the exact planned UTF-8
 content and digest.
 
+## Upgrade Command
+
+`spctx upgrade` does the byte-level part of an upgrade that agents had done by
+hand, and once got wrong: T1's upgrade dropped every packaged trigger category
+while restoring descriptions. The tracked regions belong to the package by the
+table in `product.md`, so replacing them keeps the rule that no command rewrites
+text a project wrote. Recognition by digest is what makes it safe: text that
+matches a recorded release is replaced; text that matches none was edited here
+and is skipped with its diff until `--replace-edited` is given.
+
+The plan records every file's bytes and identity. Apply first adds missing
+starter files through `init`'s own apply, because that step rechecks every
+starter file against what it saw. It then replaces each file through a
+temporary file and `os.replace`, rechecking bytes and identity first. If a step
+fails, replaced files get their original bytes back and files this run added
+are removed when they are unchanged; the error says whether that undo was
+complete. Line endings and every byte outside the regions are kept. A pointer
+is regenerated only when it is byte-identical to the stub for its own
+description, so an edited pointer is reported, never rewritten.
+
+The skill's upgrade mode now runs the command and keeps only steps that need
+judgment: regions skipped as edited, offered instruction-file and practice-file
+lines, the field rename, duplicated rules, and what earlier versions left
+behind. That cut the procedure from 935 to about 450 words.
+
+## Install Source and Inventory
+
+The `init` report reads the installed distribution's `direct_url.json`
+(PEP 610) and `INSTALLER` and prints a ready-made `Context tools` line: the
+environment, and the upgrade command for its source, shown relative to the
+project or the home directory so it carries no user name. A path outside both is
+flagged as specific to one machine. An install with no recorded source gets a
+line that says so and repeats the rule never to install by name.
+
+`spctx check --inventory` measures each context document (words, sections,
+`Update when` line, dated lines, links out) and lists every file in the
+repository that names it, by `.context/` path or Markdown link, plus names of
+context documents that are not there. It reads regular, non-ignored files up to
+1 MB, skips tool and cache directories, never follows links, and stops at
+20,000 files. It reports counts, never findings: a reference scan as a finding
+fired on this repository's own fixtures, and a size line in every report would
+invite trimming for its own sake. The retire and review steps run it.
+
 ## Routing Block Version
 
 The managed `AGENTS.md` routing block stays at v1 even though dev17 added a
@@ -118,15 +165,17 @@ the upgrade asks projects to delete the restatement.
 ## Earlier Package Text
 
 `history.py` holds the SHA-256 of the routing block, the practice core, and each
-skill body as every release from 0.1.0.dev22 shipped them, taken from this
-repository's release commits. When a tracked region matches one exactly, `check`
+skill body and the packaged part of each description, as every release from
+0.1.0.dev22 shipped them. `tools/record_release_digests.py` regenerates the file
+from release refs. When a tracked region matches one exactly, `check`
 names that version: `DH-PRACTICE-001` becomes `unfinished` with an upgrade
 message instead of `broken`, `DH-ROUTE-004` and `DH-SKILL-003` name the version,
 and the state carries `earlier_package_text`, rendered as one summary line. This
 separates a project that has not upgraded, or a branch that merged an older
-copy, from a project that edited a tracked region. Add each release's digests
-when it ships; earlier versions are not recorded, so their text still reads as
-modified.
+copy, from a project that edited a tracked region. Record each release after
+tagging it; versions before dev22 are not recorded, so their text reads as
+edited and needs `--replace-edited` after review. `spctx upgrade` uses the same
+table.
 
 ## Report Scope
 
@@ -159,7 +208,7 @@ compare-and-swap boundary across the final filesystem call.
 
 Health checks do not follow links or treat prose heuristics as proof of
 semantic adequacy. `DH-LINK-001` tests only whether the file a Markdown link in
-`.context/` or `AGENTS.md` names exists, by lexical path, skipping URLs,
+`.context/`, `AGENTS.md`, `README.md`, or `docs/` names exists, by lexical path, skipping URLs,
 anchors, paths outside the project, ignored paths, and lines that point into Git
 history; it never opens the target or checks anchors. They verify only the required starter structure, exact
 scientific-core and project-context routing blocks, Agent Skill structure,
@@ -172,8 +221,11 @@ agent routing, and natural-language compatibility remain distinct report states.
 
 ## Drift and State Signals
 
-`DH-STALE-001` warns when a `.context/` document backticks a repository-relative
-path that is not present. A line that points into Git history, such as "at commit
+`DH-STALE-001` warns when a `.context/` document, `README.md`, or Markdown under
+`docs/` backticks a repository-relative path that is not present; public-doc
+findings carry the `public-docs` category. `README.md` also joins the
+repeated-passage comparison, but only passages of 20 or more words count there,
+because public text and context may restate a fact for different readers. A line that points into Git history, such as "at commit
 `a882412`" or a `git show` command, is skipped: T2 used exactly that form for
 retired files, which the retire procedure recommends. It is the only drift signal available to a read-only
 structural tool, so it is deliberately narrow: the string must look like a path
@@ -235,7 +287,7 @@ structure as approval, and the aggregate hid the individual signals that are
 actually actionable. Tuning trigger phrasings, in particular, is the outcome the
 system wants and was previously reported as divergence from the packaged text.
 
-The report is at schema 16. Instruction files other than `AGENTS.md` and
+The report is at schema 17. Instruction files other than `AGENTS.md` and
 `CLAUDE.md` are preserved but are not yet inspected or certified as discoverable
 by the CLI.
 
@@ -287,7 +339,7 @@ adds missing canonical files but never removes project-owned legacy files. Both
 migrations affect only prototype repositories predating publication, so they are
 recorded here rather than in the public README.
 
-The supported command surface is exactly `init`, `check`, and `sync-index`.
+The supported command surface is exactly `init`, `check`, `sync-index`, and `upgrade`.
 Package modules exist to implement those commands, but no stable public Python
 API or automatic migration promise is made before 1.0. Runtime code uses only
 the Python standard library; Hatchling is build-only.

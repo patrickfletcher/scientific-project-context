@@ -383,8 +383,8 @@ class LifecycleLayoutTests(unittest.TestCase):
             root = Path(tmp)
             self.create_lifecycle_layout(root)
             echoed = (
-                "Classify findings as observed, proposed interpretation, or unknown. "
-                "Filenames alone do not establish scientific meaning or change authority."
+                "Classify what you find as observed, proposed interpretation, or unknown. "
+                "A filename does not establish scientific meaning or who may change something."
             )
             agents = root / "AGENTS.md"
             agents.write_text(

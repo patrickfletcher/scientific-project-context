@@ -18,6 +18,9 @@ To add a document, create it under `.context/` with `Purpose`, `Read when`, and 
 - [evaluation.md](evaluation.md)
   - Purpose: define the evidence needed to assess the product and record what real use has taught without identifying anyone.
   - Read when: interpreting checks, planning or recording a trial, or making a product effect, usability, compatibility, or release claim.
+- [glossary.md](glossary.md)
+  - Purpose: give each concept in the shipped text one word, and list the words that text avoids.
+  - Read when: writing or reviewing any packaged file, skill, report line, or public document.
 - [product.md](product.md)
   - Purpose: define what Scientific Project Context is, the outcomes it should improve, and the boundaries that keep it small.
   - Read when: changing the starter files, user journey, context rules, or product scope.
