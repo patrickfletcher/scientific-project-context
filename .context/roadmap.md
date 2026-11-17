@@ -4,33 +4,22 @@ Purpose: explain the order of the next few product moves.
 Read when: planning beyond the current task.
 Update when: trial evidence changes the sequence or a real release effort begins.
 
-## Now - Measure dev26 and dev27 in the Author's Trials
+## Now - Observe dev27 in Ordinary Work
 
-dev26 carries a review of four trials: the exploratory default in the routing
-block, the user in place of roles, the strict reproducibility standard reserved
-for publication, a review mode, an upgrade step that lists what earlier versions
-left behind, and `spctx-literature`. `.context/evaluation.md` maps each change
-to its observation.
+Bring the author's trial repositories directly to dev27, then continue their
+normal work. The [evaluation plan](evaluation.md#next-useful-evidence) defines
+the observations and the short trial period. Use what it shows to choose the
+next change and whether to extend the trials.
 
-dev27 adds `spctx upgrade`, the inventory, the install-source line, and a plain
-technical writing style with one word per concept. Upgrading some repositories
-by hand to dev26 and others with the command to dev27 compares the two paths.
-
-Before upgrading, take the fixed-prompt baseline in `.context/evaluation.md` in
-each of the author's trial repositories. Upgrade each in a fresh session told
-only the skill and the mode, rerun the prompts, and watch for two weeks with the
-measures listed there. Who else receives dev26 is decided after.
-
-Hold the rest still while that runs: the eight files, four commands, report
-fields, and check identifiers. Record which version each trial runs.
+Keep the packaged guidance and CLI stable during this observation period,
+apart from fixes for blocking problems. Root planning and context can be
+updated separately, without a package version bump.
 
 ## Next - The Remaining Trial Questions
 
-Whether skills are found without being named, whether the summary lines prompt
-anything, whether `spctx-public-writing` and `spctx-literature` earn their places,
-whether the relied-on list gets used once ceremony is lower, and which candidate
-listed under Unresolved Questions in `.context/project.md` earns its cost. Each
-needs a reason from a trial rather than from this repository's own reasoning.
+Use the trial findings to prioritize the unresolved questions in
+[project.md](project.md#unresolved-questions). Investigate a recurring failure
+when a focused comparison could change a product decision.
 
 Retain the no-hook baseline. T2's failures were in prose, which a structural
 hook cannot see.

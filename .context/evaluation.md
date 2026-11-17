@@ -160,10 +160,11 @@ T3; there are no transcripts.
 
 ## Agent Skill Behavior Scenarios
 
-Retain these scenarios for comparison on Codex and Copilot Chat. Structural
-tests confirm only canonical paths, frontmatter, non-empty procedure bodies,
-and non-overwrite behavior; they do not establish that an agent selects or
-follows a skill correctly.
+Use these scenarios for focused comparisons on Codex and Copilot Chat when a
+specific uncertainty could change a product decision. They are not a checklist
+for each trial repository. Structural tests confirm only canonical paths,
+frontmatter, non-empty procedure bodies, and non-overwrite behavior; they do not
+establish that an agent selects or follows a skill correctly.
 
 Run both harnesses against the same canonical `.agents/skills/` files in clean
 sessions, checking explicit invocation and automatic selection separately. Do
@@ -184,11 +185,11 @@ not introduce alternate roots or same-named copies into the product trial.
 | Write the related-work paragraph for the paper. | `spctx-public-writing`, citing through `spctx-literature` | Cites only checked sources and uses the project's existing list of sources. |
 | Try a quick exploratory change to a figure or analysis. | neither | The routing block is enough; no announcement, check, or record. |
 
-Every `SKILL.md` names itself before acting, so selection, misses, and false
-positives are readable from the transcript. Record whether that line actually
-appears; if a skill's content is applied without it, the announcement is not
-reliable evidence. Also record whether a public-writing request that would
-change a scientific claim hands off to `spctx-scientific-change`.
+Every `SKILL.md` asks the agent to name it before acting. Treat an announcement
+as a diagnostic clue, not proof of correct selection or procedure adherence.
+Compare the request, the work performed, and the expected selection, including
+cases where no skill applies. Also record whether a public-writing request
+that would change a scientific claim hands off to `spctx-scientific-change`.
 
 No controlled per-scenario receipt exists yet. When the table is run, record
 selection or miss, task completion, consequential errors exposed or avoided,
@@ -218,17 +219,29 @@ the structural-only boundary intact.
 
 ## Next Useful Evidence
 
-- Before and after the dev26 or dev27 upgrade in the author's trial repositories (T2
-  only with the colleague's agreement): fresh sessions, the same four prompts
-  each time (the current state and next step; an exploratory analysis change
-  chosen once per repository; a status note for a collaborator; finding and
-  checking the source of a value the project already uses). Record files read
-  and words read before the first action, skill announcements, questions and
-  stalls, markers or review documents created, context edits, whether
-  identifiers were resolved, and the author's 1–5 score. Then, for two weeks:
-  context size, the share of commits touching context, new project-written
-  overrides, and whether a hand cleanup was needed. This is the fixed-questions
-  outcome measure, adopted in dev26.
+### dev27 in Ordinary Work
+
+Upgrade the author's trial repositories directly to dev27; include T2 only
+with the colleague's agreement. Fixed evaluation prompts are not a prerequisite.
+
+1. Before upgrading, name one recurring problem the project hopes to reduce, or say that none is known. Record the starting version and agent host.
+2. Upgrade to dev27 and continue real tasks. Name a skill only if needed; automatic selection is one of the things being observed.
+3. When something revealing happens, keep a brief private note of the task, the agent's behavior, any user intervention, and the useful outcome or failure. Compare with an earlier example when one is available. Note changes in package version or agent host.
+4. After a week or two, assess the need for process correction, retention of scientific constraints and project knowledge, and new failures.
+
+Keep notes outside this product repository. Bring findings here using the
+[anonymity rules](#recording-observations-from-use). Retain concrete examples
+of improvement, persistence, or regression; announcement counts and smaller
+context alone do not establish usefulness.
+
+These are uncontrolled observations. Tasks, project state, and agent versions
+can change, so differences cannot establish that dev27 caused an improvement.
+For a costly recurring failure, use a focused comparison only when it could
+resolve a specific product decision. Repeated prompts need comparable starting
+states to be informative.
+
+### Other Evidence When Needed
+
 - The first upgrade where the user also asks for the install: whether the
   session uses the recorded upgrade command, and never installs the package by
   name from a public index.
@@ -236,7 +249,6 @@ the structural-only boundary intact.
   whether skills are found without being named, whether exploratory work stays
   cheap, whether the report lines prompt anything, and whether context upkeep
   costs less than it returns.
-- Whether an untuned project's `0 of 3` line prompts tuning without a request,
+- Whether the summary line for untuned skill descriptions prompts tuning without a request,
   and whether tuned descriptions improve automatic selection.
-- The scenario table above in clean Codex and Copilot Chat sessions.
 - A CI workflow across the declared Python range and operating systems, including macOS, when the repository is prepared for sharing.

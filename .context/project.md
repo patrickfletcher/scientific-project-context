@@ -30,9 +30,9 @@ Keep this file brief. `.context/index.md` points to focused context only when a 
 
 ## Current Work
 
-**Current focus**: dev27 builds on dev26, which never reached a trial. It moves the mechanical part of an upgrade into `spctx upgrade`, which replaces packaged text only where it matches a recorded release. It adds `check --inventory` for the review and retire steps, a ready-made `Context tools` line from the install metadata, and missing-path and link checks for public docs. It rewrites the skills, routing block, and practice core in plain technical style inspired by ASD-STE100, using one word per concept from `.context/glossary.md`; the relied-on field is now titled "What later work depends on". The context skill fell from 4,237 to about 3,900 words. dev26's changes carry over: the exploratory default in the routing block, the user in place of roles, strict reproducibility only at publication, the review mode, and `spctx-literature`.
+**Current focus**: Evaluate dev27 during ordinary project work: whether it reduces process friction while preserving scientific constraints and project knowledge. The [evaluation plan](evaluation.md#next-useful-evidence) defines what to observe.
 
-**Next meaningful step**: Push `main` and the tags, take the fixed-prompt baseline in the author's trial repositories, then upgrade them, some by hand to dev26 and some with `spctx upgrade` to dev27, and watch for two weeks whether exploratory work stays cheap without project-written overrides. Who else receives the upgrade is decided after.
+**Next meaningful step**: Upgrade the author's trial repositories directly to dev27 and resume their real tasks. Use the resulting observations to choose the next product change and whether to extend the trials.
 
 ## Scientific Work, Evidence, and Outputs
 
@@ -59,7 +59,8 @@ Every statement this project makes about product effect is exploratory. Only the
 - Does real use show that contributors recover consequential state more accurately or efficiently without disproportionate reading or question burden?
 - Should an inventory-loading failure diagnose stale editable-install metadata/source combinations and suggest reinstalling? The first root attempt reported dev4 while current source expected the dev6 five-file inventory; the version mismatch was visible, but the remediation was not.
 - Should `init` report where `spctx` was installed from, beside the interpreter it already names? Installed metadata records the source, so recording the upgrade command would not need `pip freeze`. Held while report fields stay still for the trials.
-- Do the four canonical `.agents/skills/` procedures trigger accurately in clean Codex-extension and Copilot Chat sessions without disproportionate maintenance burden? The self-announcement line added in dev17 is what should make this observable.
+- Do the four canonical `.agents/skills/` procedures trigger accurately in clean Codex-extension and Copilot Chat sessions without disproportionate maintenance burden? The [behavior scenarios](evaluation.md#agent-skill-behavior-scenarios) distinguish selection from following the procedure.
+- After the dev27 trial, do mandatory skill announcements still help users, or should a later packaged version reserve them for explicit diagnosis of skill selection?
 - Parked: should context documents become a valid Open Knowledge Format bundle? Its `description` frontmatter matches the `Purpose` line, but conforming would add YAML, including a `type` field, to every document; `.context/automation.md` explains why no frontmatter ships now.
 - Parked: does one flat index stop scaling? If a project needs listings per folder, each would be a generated `index.md`, as `.context/product.md` states.
 - Do `spctx-public-writing` and `spctx-literature` each earn a permanent place in the starter? Public writing was added for one recurring field failure; in later trials it was possibly used for author text in one and stalled unattended poster work in another, so dev26 lightened it. The literature skill was added in dev26 because three trial projects devised their own source-strength labels and citation-checking rules, and one project's own review found unchecked recollections steering its design rules. Neither has a controlled selection observation.
